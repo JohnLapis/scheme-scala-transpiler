@@ -1,6 +1,8 @@
 package transpiler;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.Test;
 
@@ -9,12 +11,25 @@ import org.junit.Test;
  */
 public class SchemeScannerTest
 {
-    /**
-     * Rigorous Test :-)
-     */
     @Test
-    public void shouldAnswerWithTrue()
+    public void interpolateStringWithExistingTokenDefinitions ()
     {
-        assertTrue( true );
+        List<String> keys = new ArrayList<>();
+        for (String key : SchemeScanner.REGEX_DEFINITIONS.keySet()) {
+            keys.add("${" + key + "}");
+        }
+        String separator = "sep";
+        String input = separator + String.join(separator, keys) + separator;
+        String expectedString =
+            separator
+            + String.join(separator, SchemeScanner.REGEX_DEFINITIONS.values())
+            + separator;
+        assertEquals(expectedString, SchemeScanner.interpolateTokenizationRegex(input));
+    }
+
+    @Test
+    public void interpolateStringWithNonExistentTokenDefinitions ()
+    {
+        assertEquals("testzzz", SchemeScanner.interpolateTokenizationRegex("test${whatever}zzz"));
     }
 }
