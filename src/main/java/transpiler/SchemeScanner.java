@@ -2,6 +2,7 @@ package transpiler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -159,6 +160,16 @@ public class SchemeScanner
     static RawPattern BYTE = raw("(1?[0-9]{1,2}|2[0-4][0-9]|25[0-5])"); // TODO incomplete.
     static GroupPattern BYTEVECTOR = and("#u8(", raw(BYTE.regex + "*"), ")");
 
+    static List<String> TOKEN_DEFINITIONS =
+        Arrays.asList(
+                      IDENTIFIER.regex,
+                      BOOLEAN.regex,
+                      NUMBER.regex,
+                      CHARACTER.regex,
+                      STRING.regex,
+                      or("(", ")", "#(", "#u8(", "'", "`", ",", ",@", ".").regex
+                      );
+
     static GroupPattern TOKEN = or(IDENTIFIER,
                                    BOOLEAN,
                                    NUMBER,
@@ -216,14 +227,47 @@ public class SchemeScanner
 
     public static List<String> tokenize(String code)
     {
-        Matcher matcher = Pattern
-            .compile(interpolateTokenizationRegex("(${TOKEN}|${INTERTOKEN_SPACE})*"))
-            .matcher(code);
+        int curPos = 0;
+        int codeLength = code.length();
         List<String> tokens = new ArrayList<>();
-        while (matcher.find()) {
-            tokens.add(matcher.group());
+
+        while (curPos < codeLength) {
+            curPos = skipIntertokenSpace(code, curPos);
+            String token = matchToken(code, curPos);
+            if (token.length() == 0) {
+                break;
+            }
+            tokens.add(token);
+            curPos += token.length();
         }
+
+        if (curPos != codeLength) {
+            throw new RuntimeException("No valid token was found at position " + curPos + ".");
+        }
+
         return tokens;
+    }
+
+    static public int skipIntertokenSpace(String code, int startPos)
+    {
+        Matcher matcher = Pattern.compile("^" + INTERTOKEN_SPACE.regex)
+            .matcher(code.substring(startPos));
+        return startPos + (matcher.find() ? matcher.end() : 0);
+    }
+
+    static public String matchToken(String code, int startPos)
+    {
+        for (String definition : TOKEN_DEFINITIONS) {
+            Matcher matcher = Pattern.compile("^" + definition)
+                    .matcher(code.substring(startPos));
+            if (!matcher.find()) continue;
+            if (matcher.group() == "") {
+                // throw some error
+            }
+            return matcher.group();
+        }
+
+        return "";
     }
 
     /**
