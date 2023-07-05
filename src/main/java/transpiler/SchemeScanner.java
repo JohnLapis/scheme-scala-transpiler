@@ -170,17 +170,6 @@ public class SchemeScanner
                       or("(", ")", "#(", "#u8(", "'", "`", ",", ",@", ".").regex
                       );
 
-    static GroupPattern TOKEN = or(IDENTIFIER,
-                                   BOOLEAN,
-                                   NUMBER,
-                                   CHARACTER,
-                                   STRING,
-                                   "(", ")", "#(", "#u8(", "'", "`", ",", ",@", ".");
-
-    static Map<String, String> REGEX_DEFINITIONS =
-        Map.of("TOKEN", TOKEN.regex,
-               "INTERTOKEN_SPACE", INTERTOKEN_SPACE.regex);
-
     static String getRegexStr(Object obj)
     {
         String str;
@@ -268,29 +257,6 @@ public class SchemeScanner
         }
 
         return "";
-    }
-
-    /**
-     * Substrings of the form "${VAR}" will be replaced with the value corresponding
-     * to the key VAR in REGEX_DEFINITIONS if present.
-     */
-    static String interpolateTokenizationRegex(String string)
-    {
-        Matcher matcher = Pattern.compile("\\$\\{\\w+\\}").matcher(string);
-        List<String> regexParts = new ArrayList<>();
-        int lastIndex = 0;
-        while (matcher.find()) {
-            regexParts.add(string.substring(lastIndex, matcher.start()));
-            // We skip the matched "${" and "}".
-            String definitionValue = REGEX_DEFINITIONS.get(string.substring(matcher.start() + 2,
-                                                                            matcher.end() - 1));
-            if (definitionValue != null) {
-                regexParts.add(definitionValue);
-            }
-            lastIndex = matcher.end();
-        }
-        regexParts.add(string.substring(lastIndex, string.length()));
-        return String.join("", regexParts);
     }
 
     public static SchemeAST parse(List<String> tokens)
