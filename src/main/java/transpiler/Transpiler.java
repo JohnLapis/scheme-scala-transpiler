@@ -10,6 +10,7 @@ import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
+import transpiler.SchemeScanner.Token;
 
 public class Transpiler {
     public static void main(String[] args) throws IOException, ParseException, Exception {
@@ -29,7 +30,7 @@ public class Transpiler {
 
     public static String convertSchemeToLuaCode(String code)
     {
-        List<String> schemeCodeTokens = SchemeScanner.tokenize(code);
+        List<Token> schemeCodeTokens = SchemeScanner.tokenize(code);
         SchemeAST schemeAST = SchemeScanner.parse(schemeCodeTokens);
         IntermediateAST intermediateAST =
             SchemeScanner.convertSchemeToIntermediateAST(schemeAST);

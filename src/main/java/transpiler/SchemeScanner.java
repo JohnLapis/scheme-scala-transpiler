@@ -9,8 +9,18 @@ import java.util.regex.Pattern;
 
 public class SchemeScanner
 {
+    record Token(TokenType type, String value) {}
     record GroupPattern(String regex) {}
     record RawPattern(String regex) {}
+
+    public enum TokenType {
+        IDENTIFIER,
+        BOOLEAN,
+        NUMBER,
+        CHARACTER,
+        STRING,
+        DELIMITER,
+    };
 
     static GroupPattern LINE_ENDING = or("\n", "\r", "\r\n");
     static GroupPattern INTRALINE_WHITESPACE = or(" ", "\t");
@@ -160,15 +170,15 @@ public class SchemeScanner
     static RawPattern BYTE = raw("(1?[0-9]{1,2}|2[0-4][0-9]|25[0-5])"); // TODO incomplete.
     static GroupPattern BYTEVECTOR = and("#u8(", raw(BYTE.regex + "*"), ")");
 
-    static List<String> TOKEN_DEFINITIONS =
-        Arrays.asList(
-                      IDENTIFIER.regex,
-                      BOOLEAN.regex,
-                      NUMBER.regex,
-                      CHARACTER.regex,
-                      STRING.regex,
-                      or("(", ")", "#(", "#u8(", "'", "`", ",", ",@", ".").regex
-                      );
+    static Map<TokenType, String> TOKEN_DEFINITIONS =
+        Map.of(
+               TokenType.IDENTIFIER, IDENTIFIER.regex,
+               TokenType.BOOLEAN, BOOLEAN.regex,
+               TokenType.NUMBER, NUMBER.regex,
+               TokenType.CHARACTER, CHARACTER.regex,
+               TokenType.STRING, STRING.regex,
+               TokenType.DELIMITER, or("(", ")", "#(", "#u8(", "'", "`", ",", ",@", ".").regex
+            );
 
     static String getRegexStr(Object obj)
     {
@@ -214,20 +224,20 @@ public class SchemeScanner
         return new GroupPattern("(" + String.join("|", getRegexStr(regexes)) + ")");
     }
 
-    public static List<String> tokenize(String code)
+    public static List<Token> tokenize(String code)
     {
         int curPos = 0;
         int codeLength = code.length();
-        List<String> tokens = new ArrayList<>();
+        List<Token> tokens = new ArrayList<>();
 
         while (curPos < codeLength) {
             curPos = skipIntertokenSpace(code, curPos);
-            String token = matchToken(code, curPos);
-            if (token.length() == 0) {
+            Token token = matchToken(code, curPos);
+            if (token.value == "") {
                 break;
             }
             tokens.add(token);
-            curPos += token.length();
+            curPos += token.value.length();
         }
 
         if (curPos != codeLength) {
@@ -244,22 +254,19 @@ public class SchemeScanner
         return startPos + (matcher.find() ? matcher.end() : 0);
     }
 
-    static public String matchToken(String code, int startPos)
+    static public Token matchToken(String code, int startPos)
     {
-        for (String definition : TOKEN_DEFINITIONS) {
-            Matcher matcher = Pattern.compile("^" + definition)
+        for (Map.Entry<TokenType, String> definition : TOKEN_DEFINITIONS.entrySet()) {
+            Matcher matcher = Pattern.compile("^" + definition.getValue())
                     .matcher(code.substring(startPos));
             if (!matcher.find()) continue;
-            if (matcher.group() == "") {
-                // throw some error
-            }
-            return matcher.group();
+            return new Token(definition.getKey(), matcher.group());
         }
 
-        return "";
+        return new Token(null, "");
     }
 
-    public static SchemeAST parse(List<String> tokens)
+    public static SchemeAST parse(List<Token> tokens)
     {
         return new SchemeAST();
     }
