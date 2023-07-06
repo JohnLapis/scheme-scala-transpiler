@@ -1,27 +1,34 @@
-package transpiler;
+package transpiler.scheme;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import transpiler.IntermediateRepresentation;
+
+class GroupPattern
+{
+    String regex;
+
+    public GroupPattern(String regex)
+    {
+        this.regex = regex;
+    }
+}
+
+class RawPattern
+{
+    String regex;
+
+    public RawPattern(String regex)
+    {
+        this.regex = regex;
+    }
+}
 
 public class SchemeScanner
 {
-    record Token(TokenType type, String value) {}
-    record GroupPattern(String regex) {}
-    record RawPattern(String regex) {}
-
-    public enum TokenType {
-        IDENTIFIER,
-        BOOLEAN,
-        NUMBER,
-        CHARACTER,
-        STRING,
-        DELIMITER,
-    };
-
     static GroupPattern LINE_ENDING = or("\n", "\r", "\r\n");
     static GroupPattern INTRALINE_WHITESPACE = or(" ", "\t");
     static GroupPattern WHITESPACE = or(INTRALINE_WHITESPACE, LINE_ENDING);
@@ -266,13 +273,15 @@ public class SchemeScanner
         return new Token(null, "");
     }
 
-    public static SchemeAST parse(List<Token> tokens)
+    public static IntermediateRepresentation convertASTToIR(ASTNode ast)
     {
-        return new SchemeAST();
+        return new IntermediateRepresentation();
     }
 
-    public static IntermediateAST convertSchemeToIntermediateAST(SchemeAST ast)
+
+    public static ASTNode generateAST(String code)
     {
-        return new IntermediateAST();
+        SchemeParser parser = new SchemeParser(tokenize(code));
+        return parser.parse();
     }
 }

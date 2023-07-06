@@ -1,20 +1,21 @@
-package transpiler;
+package transpiler.lua;
 
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import transpiler.IntermediateRepresentation;
 
 public class LuaScanner
 {
-    public static String generate(LuaAST ast)
+    public static String generate(ASTNode ast)
     {
         return "";
     }
 
-    public static LuaAST convertIntermediateToLuaAST(IntermediateAST ast)
+    public static ASTNode convertIRToAST(IntermediateRepresentation ast)
     {
-        return new LuaAST();
+        return new ASTNode();
     }
 }
