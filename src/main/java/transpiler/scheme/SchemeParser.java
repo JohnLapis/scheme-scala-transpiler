@@ -229,6 +229,25 @@ public class SchemeParser
                "LAMBDA_EXPRESSION",
                nonterminal(terms("(", "lambda", term("FORMALS"), term("BODY"), ")")),
 
+               "CONDITIONAL", nonterminal(terms("(",
+                                               "if",
+                                               term("TEST"),
+                                               term("CONSEQUENT"),
+                                               term("ALTERNATE"),
+                                                ")")),
+               "TEST", nonterminal(term("EXPRESSION")),
+               "CONSEQUENT", nonterminal(term("EXPRESSION")),
+               "ALTERNATE", nonterminal(term("EXPRESSION"), ""),
+
+               "ASSIGNMENT", nonterminal(terms("(",
+                                               "set!",
+                                               term("IDENTIFIER"),
+                                               term("EXPRESSION"),
+                                               ")")),
+
+               "INCLUDER", nonterminal(terms("(", "include", term("STRING", "+"), ")"),
+                                       terms("(", "include-ci", term("STRING", "+"), ")")),
+
                /* Patterns */
                "BOOLEAN", nonterminal(SchemeScanner.BOOLEAN),
                "NUMBER", nonterminal(SchemeScanner.NUMBER),
