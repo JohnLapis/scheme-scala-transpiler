@@ -47,18 +47,18 @@ public class SchemeScanner
     static GroupPattern ATMOSPHERE = or(WHITESPACE, COMMENT, DIRECTIVE);
     static RawPattern INTERTOKEN_SPACE = raw(ATMOSPHERE.regex + "*");
 
-    static GroupPattern SIGN = or("", "+", "-");
+    static GroupPattern SIGN = or("+", "-", "");
     static GroupPattern INFNAN = or("+inf.0", "-inf.0", "+nan.0", "-nan.0");
     static String EXPONENT_MARKER = "e";
-    static GroupPattern SUFFIX = or("", and(EXPONENT_MARKER, SIGN, raw(DIGIT(10).regex + "+")));
-    static GroupPattern EXACTNESS = or("", "#e", "#i");
+    static GroupPattern SUFFIX = or(and(EXPONENT_MARKER, SIGN, raw(DIGIT(10).regex + "+")), "");
+    static GroupPattern EXACTNESS = or("#e", "#i", "");
 
     static GroupPattern RADIX(int n)
     {
         return switch (n) {
         case 2 -> new GroupPattern("#b");
         case 8 -> new GroupPattern("#o");
-        case 10 -> or("", "#d");
+        case 10 -> or("#d", "");
         case 16 -> new GroupPattern("#x");
         default -> RADIX(10);
         };
@@ -150,10 +150,10 @@ public class SchemeScanner
                                             "\\\\|");
     static GroupPattern SIGN_SUBSEQUENT = or(INITIAL, EXPLICIT_SIGN, "@");
     static GroupPattern DOT_SUBSEQUENT = or(SIGN_SUBSEQUENT, ".");
-    static GroupPattern PECULIAR_IDENTIFIER = or(EXPLICIT_SIGN,
-                                                 and(EXPLICIT_SIGN, SIGN_SUBSEQUENT, raw(SUBSEQUENT.regex + "*")),
+    static GroupPattern PECULIAR_IDENTIFIER = or(and(EXPLICIT_SIGN, SIGN_SUBSEQUENT, raw(SUBSEQUENT.regex + "*")),
                                                  and(EXPLICIT_SIGN, ".", DOT_SUBSEQUENT, raw(SUBSEQUENT.regex + "*")),
-                                                 and(".", DOT_SUBSEQUENT, raw(SUBSEQUENT.regex + "*")));
+                                                 and(".", DOT_SUBSEQUENT, raw(SUBSEQUENT.regex + "*")),
+                                                 EXPLICIT_SIGN);
     static GroupPattern IDENTIFIER = or(and(INITIAL, raw(SUBSEQUENT.regex + "*")),
                                         and("|", raw(SYMBOL_ELEMENT.regex + "*"), "|"),
                                               PECULIAR_IDENTIFIER);
