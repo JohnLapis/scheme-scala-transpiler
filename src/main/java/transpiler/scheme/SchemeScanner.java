@@ -123,7 +123,8 @@ public class SchemeScanner
                   and("+", UREAL(n), "i"),
                   and("-", UREAL(n), "i"),
                   and(INFNAN, "i"),
-                  and("+", "i"));
+                  and("+", "i"),
+                  and("-", "i"));
     }
 
     static GroupPattern NUMBER_(int n)
@@ -186,6 +187,16 @@ public class SchemeScanner
                TokenType.STRING, STRING.regex,
                TokenType.DELIMITER, or("(", ")", "#(", "#u8(", "'", "`", ",", ",@", ".").regex
             );
+
+    // IDENTIFIER must be last.
+    static TokenType[] ORDERED_TOKEN_TYPES = {
+        TokenType.BOOLEAN,
+        TokenType.NUMBER,
+        TokenType.CHARACTER,
+        TokenType.STRING,
+        TokenType.DELIMITER,
+        TokenType.IDENTIFIER
+    };
 
     static String getRegexStr(Object obj)
     {
@@ -263,11 +274,12 @@ public class SchemeScanner
 
     static public Token matchToken(String code, int startPos)
     {
-        for (Map.Entry<TokenType, String> definition : TOKEN_DEFINITIONS.entrySet()) {
-            Matcher matcher = Pattern.compile("^" + definition.getValue())
-                    .matcher(code.substring(startPos));
+        for (TokenType tokenType : ORDERED_TOKEN_TYPES) {
+            String definition = TOKEN_DEFINITIONS.get(tokenType);
+            Matcher matcher = Pattern.compile("^" + definition)
+                .matcher(code.substring(startPos));
             if (!matcher.find()) continue;
-            return new Token(definition.getKey(), matcher.group());
+            return new Token(tokenType, matcher.group());
         }
 
         return new Token(null, "");

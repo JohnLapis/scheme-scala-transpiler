@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.junit.Ignore;
 import java.util.List;
 import java.util.Arrays;
+import java.util.ArrayList;
 
 public class SchemeScannerTest
 {
@@ -23,8 +24,8 @@ public class SchemeScannerTest
         }
 
         // Test values in a list.
-        List<Token> expectedTokens =
-            Arrays.asList(new Token(TokenType.DELIMITER, "("));
+        List<Token> expectedTokens = new ArrayList<>();
+        expectedTokens.add(new Token(TokenType.DELIMITER, "("));
         for (String tokenValue : tokenValues) {
             expectedTokens.add(new Token(TokenType.NUMBER, tokenValue));
         }
