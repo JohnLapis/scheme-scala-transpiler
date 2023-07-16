@@ -188,16 +188,17 @@ public class SchemeParser
                                          term("LAMBDA_EXPRESSION"),
                                          term("CONDITIONAL"),
                                          term("ASSIGNMENT"),
-                                         term("DERIVED_EXPRESSION"),
-                                         term("MACRO_BLOCK"),
+                                         // term("DERIVED_EXPRESSION"),
+                                         // term("MACRO_BLOCK"),
                                          term("INCLUDER"),
 
                                          // The following terms must have lower
                                          // precedence in the rule because,
                                          // otherwise, some of the previous exprs
                                          // could be parsed as one of the following.
-                                         term("PROCEDURE_CALL"),
-                                         term("MACRO_USE")),
+                                         term("PROCEDURE_CALL")
+                                         // term("MACRO_USE")),
+                                         ),
                "LITERAL", nonterminal(term("QUOTATION"), term("SELF_EVALUATING")),
                "SELF_EVALUATING", nonterminal(term("BOOLEAN"),
                                                term("NUMBER"),
