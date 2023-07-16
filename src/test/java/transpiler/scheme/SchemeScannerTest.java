@@ -5,7 +5,6 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.junit.Ignore;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 public class SchemeScannerTest
@@ -14,6 +13,8 @@ public class SchemeScannerTest
     public void certainTokensShouldBeNumbers()
     {
         List<String> tokenValues = Arrays.asList("+i", "-i", "+inf.0", "-inf.0", "+nan.0", "-nan.0");
+
+        // Test values individually.
         for (String tokenValue : tokenValues) {
             List<Token> expectedTokens =
                 Arrays.asList(new Token(TokenType.NUMBER, tokenValue));
@@ -21,16 +22,15 @@ public class SchemeScannerTest
             compareLists(expectedTokens, outputTokens);
         }
 
-        String input = "(" + String.join(", ", tokenValues) + ")";
-        for (Token token : SchemeScanner.tokenize(input)) {
-            TokenType expectedType;
-            if (token.value == "(" || token.value == "," || token.value == ")") {
-                expectedType = TokenType.DELIMITER;
-            } else {
-                expectedType = TokenType.NUMBER;
-            }
-            assertEquals(expectedType, token.type);
+        // Test values in a list.
+        List<Token> expectedTokens =
+            Arrays.asList(new Token(TokenType.DELIMITER, "("));
+        for (String tokenValue : tokenValues) {
+            expectedTokens.add(new Token(TokenType.NUMBER, tokenValue));
         }
+        expectedTokens.add(new Token(TokenType.DELIMITER, ")"));
+        String inputCode = "(" + String.join(" ", tokenValues) + ")";
+        compareLists(expectedTokens, SchemeScanner.tokenize(inputCode));
     }
 
     @Ignore("TODO")
@@ -42,20 +42,19 @@ public class SchemeScannerTest
 
 
     @Test
-    public void schemeCodeShouldBeTokenized ()
+    public void schemeCodeShouldBeTokenized()
     {
-        List<String> expectedValue = Arrays.asList("(", "+", "1", "(", "+", "2", "3", ")", ")");
-        assertEquals(expectedValue,
-                     getTokensValues(SchemeScanner.tokenize("(+ 1 (+ 2 3))"))) ;
-    }
-
-    static List<String> getTokensValues(List<Token> tokens)
-    {
-        List<String> values = new ArrayList<>();
-        for (Token token : tokens) {
-            values.add(token.value);
-        }
-        return values;
+        List<Token> expectedTokens =
+            Arrays.asList(new Token(TokenType.DELIMITER, "("),
+                          new Token(TokenType.IDENTIFIER, "+"),
+                          new Token(TokenType.NUMBER, "1"),
+                          new Token(TokenType.DELIMITER, "("),
+                          new Token(TokenType.IDENTIFIER, "+"),
+                          new Token(TokenType.NUMBER, "2"),
+                          new Token(TokenType.NUMBER, "3"),
+                          new Token(TokenType.DELIMITER, ")"),
+                          new Token(TokenType.DELIMITER, ")"));
+        compareLists(expectedTokens, SchemeScanner.tokenize("(+ 1 (+ 2 3))"));
     }
 
     static void compareLists(List<?> list1, List<?> list2)

@@ -15,7 +15,7 @@ public class Token
     public boolean equals(Object obj)
     {
         if (obj instanceof Token token) {
-            return type == token.type && value == token.value;
+            return type == token.type && value.equals(token.value);
         } else {
             return false;
         }
@@ -24,6 +24,6 @@ public class Token
     @Override
     public String toString()
     {
-        return "(" + type + ", " + value + ")";
+        return "(" + type + ", \"" + value + "\")";
     }
 }
