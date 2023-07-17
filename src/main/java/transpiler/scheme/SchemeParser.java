@@ -376,10 +376,11 @@ public class SchemeParser
         Term term = termIter.next();
         int matches = 0;
         while (true) {
-            Token token = iterator.next();
+            Token token;
             boolean tokenMatched = false;
             switch (term.type) {
             case TERMINAL:
+                token = iterator.next();
                 if (term.value == token.value) {
                     tokenMatched = true;
                     if (token.type == TokenType.IDENTIFIER) {
@@ -388,6 +389,7 @@ public class SchemeParser
                 }
                 break;
             case PATTERN:
+                token = iterator.next();
                 if (patternMatches(term.value, token.value)) {
                     tokenMatched = true;
                     node.addChild(new ASTNode(token.value));
