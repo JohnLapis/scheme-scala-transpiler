@@ -70,7 +70,7 @@ public class SchemeParser
     static Map<String, Rule> DEFINITIONS =
         buildDefinitions(
                /* Programs and definitions */
-               "PROGRAM", nonterminal(terms(term("IMPORT_DECLARATION", "+"),
+               "PROGRAM", nonterminal(terms(term("IMPORT_DECLARATION", "*"),
                                             term("COMMAND_OR_DEFINITION", "+"))),
                "COMMAND_OR_DEFINITION",
                nonterminal(term("COMMAND"),
