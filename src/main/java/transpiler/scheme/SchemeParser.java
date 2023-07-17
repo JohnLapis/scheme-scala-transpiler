@@ -3,13 +3,14 @@ package transpiler.scheme;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ListIterator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-enum Flag {REPEATS, OPTIONAL}
+enum Modifier {PLUS, ASTERISK}
 
 enum TermType {TERMINAL, NONTERMINAL, PATTERN}
 
@@ -17,20 +18,20 @@ class Term
 {
     String value;
     TermType type;
-    List<Flag> flags;
+    Modifier modifier;
 
     public Term()
     {
         this.value = null;
         this.type = null;
-        this.flags = new ArrayList<Flag>();
+        this.modifier = null;
     }
 
-    public Term(String value, TermType type, List<Flag> flags)
+    public Term(String value, TermType type, Modifier modifier)
     {
         this.value = value;
         this.type = type;
-        this.flags = flags;
+        this.modifier = modifier;
     }
 }
 
@@ -327,22 +328,22 @@ public class SchemeParser
         return term(value, TermType.NONTERMINAL, "");
     }
 
-    static Term term(String value, String flagSymbol)
+    static Term term(String value, String modifierSymbol)
     {
-        return term(value, TermType.NONTERMINAL, flagSymbol);
+        return term(value, TermType.NONTERMINAL, modifierSymbol);
     }
 
-    static Term term(String value, TermType type, String flagSymbol)
+    static Term term(String value, TermType type, String modifierSymbol)
     {
-        return new Term(value, type, getFlags(flagSymbol));
+        return new Term(value, type, getModifier(modifierSymbol));
     }
 
-    static List<Flag> getFlags(String symbol)
+    static Modifier getModifier(String symbol)
     {
         return switch (symbol) {
-            case "+" -> Arrays.asList(Flag.REPEATS);
-            case "*" -> Arrays.asList(Flag.REPEATS, Flag.OPTIONAL);
-            default -> Arrays.asList();
+        case "+" -> Modifier.PLUS;
+        case "*" -> Modifier.ASTERISK;
+        default -> null;
         };
     }
 
@@ -371,24 +372,56 @@ public class SchemeParser
     ASTNode parseExpr(Expr expr)
     {
         ASTNode node = new ASTNode();
-        for (Term term : expr.terms) {
+        Iterator<Term> termIter = expr.terms.iterator();
+        Term term = termIter.next();
+        int matches = 0;
+        while (true) {
             Token token = iterator.next();
+            boolean tokenMatched = false;
             switch (term.type) {
             case TERMINAL:
-                if (term.value != token.value) return null;
-                if (token.type == TokenType.IDENTIFIER) {
-                    node.value = token.value;
+                if (term.value == token.value) {
+                    tokenMatched = true;
+                    if (token.type == TokenType.IDENTIFIER) {
+                        node.value = token.value;
+                    }
                 }
                 break;
             case PATTERN:
-                if (!patternMatches(term.value, token.value)) return null;
-                node.addChild(new ASTNode(token.value));
+                if (patternMatches(term.value, token.value)) {
+                    tokenMatched = true;
+                    node.addChild(new ASTNode(token.value));
+                }
                 break;
             case NONTERMINAL:
                 ASTNode ruleNode = parseRule(term.value);
-                if (ruleNode == null) return null;
-                node.addChild(ruleNode);
+                if (ruleNode != null) {
+                    tokenMatched = true;
+                    node.addChild(ruleNode);
+                }
                 break;
+            }
+
+            if (tokenMatched) {
+                if (term.modifier == Modifier.PLUS
+                    || term.modifier == Modifier.ASTERISK) {
+                    matches++;
+                } else if (termIter.hasNext()) {
+                    term = termIter.next();
+                    matches = 0;
+                } else {
+                    break;
+                }
+            } else if (term.modifier == Modifier.ASTERISK && matches >= 0
+                       || term.modifier == Modifier.PLUS && matches >= 1) {
+                if (termIter.hasNext()) {
+                    term = termIter.next();
+                    matches = 0;
+                } else {
+                    break;
+                }
+            } else {
+                return null;
             }
         }
         return node;
