@@ -6,14 +6,14 @@ import java.util.Iterator;
 import java.lang.StringBuilder;
 import java.util.List;
 
-public abstract class AbstractASTNode
+public class ASTNode
 {
     public String type;
     public String value;
-    AbstractASTNode parent;
-    public List<AbstractASTNode> children;
+    ASTNode parent;
+    public List<ASTNode> children;
 
-    public AbstractASTNode()
+    public ASTNode()
     {
         this.type = null;
         this.value = null;
@@ -21,7 +21,7 @@ public abstract class AbstractASTNode
         this.children = new ArrayList<>();
     }
 
-    public AbstractASTNode(String type)
+    public ASTNode(String type)
     {
         this.type = type;
         this.value = null;
@@ -29,7 +29,7 @@ public abstract class AbstractASTNode
         this.children = new ArrayList<>();
     }
 
-    public AbstractASTNode(String type, String value)
+    public ASTNode(String type, String value)
     {
         this.type = type;
         this.value = value;
@@ -37,7 +37,7 @@ public abstract class AbstractASTNode
         this.children = new ArrayList<>();
     }
 
-    public AbstractASTNode(String type, String value, AbstractASTNode[] children)
+    public ASTNode(String type, String value, ASTNode[] children)
     {
         this.type = type;
         this.value = value;
@@ -45,23 +45,23 @@ public abstract class AbstractASTNode
         setChildren(children);
     }
 
-    public void addChild(AbstractASTNode node)
+    public void addChild(ASTNode node)
     {
         node.parent = this;
         this.children.add(node);
     }
 
-    public void setChildren(AbstractASTNode[] children)
+    public void setChildren(ASTNode[] children)
     {
         this.children = Arrays.asList(children);
-        for (AbstractASTNode child : children) {
+        for (ASTNode child : children) {
             child.parent = this;
         }
     }
 
-    public AbstractASTNode getRoot()
+    public ASTNode getRoot()
     {
-        AbstractASTNode node = this;
+        ASTNode node = this;
         while (this.parent != null) {
             node = this.parent;
         }
@@ -71,9 +71,13 @@ public abstract class AbstractASTNode
     @Override
     public boolean equals(Object obj)
     {
-        if (obj instanceof AbstractASTNode node) {
-            return type == node.type
-                && value == node.value
+        if (obj instanceof ASTNode node) {
+            boolean typesAreEqual = type == null ?
+                node.type == null : type.equals(node.type);
+            boolean valuesAreEqual = value == null ?
+                node.value == null : value.equals(node.value);
+            return typesAreEqual
+                && valuesAreEqual
                 && children.size() == node.children.size();
         } else {
             return false;
@@ -94,8 +98,8 @@ public abstract class AbstractASTNode
         buffer.append(value == null ?
                       "(" + type + ")" : "(" + type + ", " + value + ")");
         buffer.append('\n');
-        for (Iterator<AbstractASTNode> it = children.iterator(); it.hasNext();) {
-            AbstractASTNode next = it.next();
+        for (Iterator<ASTNode> it = children.iterator(); it.hasNext();) {
+            ASTNode next = it.next();
             if (it.hasNext()) {
                 next.print(buffer, childrenPrefix + "├── ", childrenPrefix + "│   ");
             } else {

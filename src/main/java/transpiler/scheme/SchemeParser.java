@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import transpiler.ASTNode;
 
 enum Modifier {PLUS, ASTERISK}
 

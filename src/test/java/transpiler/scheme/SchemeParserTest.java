@@ -2,6 +2,7 @@ package transpiler.scheme;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
+import transpiler.ASTNode;
 import org.junit.Test;
 import org.junit.Ignore;
 import java.util.List;
@@ -75,8 +76,8 @@ public class SchemeParserTest
     static void compareASTNodes(ASTNode node1, ASTNode node2)
     {
         assertTrue(node1.equals(node2));
-        int childrenCount = node1.children == null ? 0 : node1.children.size();
-        assertEquals(childrenCount, node2.children == null ? 0 : node2.children.size());
+        int childrenCount = node1.children.size();
+        assertEquals(node1.children.size(), node2.children.size());
         for (int i = 0; i < childrenCount; i++) {
             compareASTNodes(node1.children.get(i), node2.children.get(i));
         }

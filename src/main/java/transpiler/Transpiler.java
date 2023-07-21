@@ -11,7 +11,6 @@ import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import transpiler.scheme.SchemeScanner;
-import transpiler.scheme.ASTNode;
 import transpiler.lua.LuaScanner;
 
 public class Transpiler {
