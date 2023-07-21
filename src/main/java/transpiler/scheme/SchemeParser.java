@@ -74,9 +74,12 @@ public class SchemeParser
                "PROGRAM", nonterminal(terms(term("IMPORT_DECLARATION", "*"),
                                             term("COMMAND_OR_DEFINITION", "+"))),
                "COMMAND_OR_DEFINITION",
-               nonterminal(term("COMMAND"),
-                           term("DEFINITION"),
-                           terms("(", "begin", term("COMMAND_OR_DEFINITION", "+"), ")")),
+               nonterminal(term("DEFINITION"),
+                           terms("(", "begin", term("COMMAND_OR_DEFINITION", "+"), ")"),
+                           // COMMAND must have lower precedence since, otherwise,
+                           // standard language constructs would be interpreted as
+                           // user definitions.
+                           term("COMMAND")),
                "DEFINITION",
                nonterminal(terms("(", "define", term("IDENTIFIER"), term("EXPRESSION"), ")"),
                            terms("(",
