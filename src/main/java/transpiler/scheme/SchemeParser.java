@@ -382,14 +382,14 @@ public class SchemeParser
         int matches = 0;
         while (true) {
             Token token;
-            boolean tokenMatched = false;
+            boolean termMatched = false;
             switch (term.type) {
             case TERMINAL:
                 if (!iterator.hasNext()) break;
 
                 token = iterator.next();
                 if (term.value == token.value) {
-                    tokenMatched = true;
+                    termMatched = true;
                     if (token.type == TokenType.IDENTIFIER) {
                         node.value = token.value;
                     }
@@ -400,20 +400,20 @@ public class SchemeParser
 
                 token = iterator.next();
                 if (patternMatches(term.value, token.value)) {
-                    tokenMatched = true;
+                    termMatched = true;
                     node.value = token.value;
                 }
                 break;
             case NONTERMINAL:
                 ASTNode ruleNode = parseRule(term.value);
                 if (ruleNode != null) {
-                    tokenMatched = true;
+                    termMatched = true;
                     node.addChild(ruleNode);
                 }
                 break;
             }
 
-            if (tokenMatched) {
+            if (termMatched) {
                 if (term.modifier == Modifier.PLUS
                     || term.modifier == Modifier.ASTERISK) {
                     matches++;
