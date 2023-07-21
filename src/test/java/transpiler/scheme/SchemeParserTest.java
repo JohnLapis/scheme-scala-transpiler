@@ -162,10 +162,34 @@ public class SchemeParserTest
         compareASTNodes(expectedAst, parser.parse());
     }
 
-    @Ignore("TODO")
     @Test
     public void parseAssignments()
     {
+        String code = """
+    (set! nIsZero (= n 0))
+            """;
+        ASTNode expectedAst =
+            n("PROGRAM",
+              n("COMMAND_OR_DEFINITION",
+                n("COMMAND",
+                  n("EXPRESSION",
+                    n("ASSIGNMENT", "set!",
+                      n("IDENTIFIER", "nIsZero"),
+                      n("EXPRESSION",
+                        n("PROCEDURE_CALL",
+                          n("OPERATOR",
+                            n("EXPRESSION",
+                              n("IDENTIFIER", "="))),
+                          n("OPERAND",
+                            n("EXPRESSION",
+                              n("IDENTIFIER", "n"))),
+                          n("OPERAND",
+                            n("EXPRESSION",
+                              n("LITERAL",
+                                n("SELF_EVALUATING",
+                                n("NUMBER", "0"))))))))))));
+        SchemeParser parser = new SchemeParser(SchemeScanner.tokenize(code));
+        compareASTNodes(expectedAst, parser.parse());
     }
 
     static void compareASTNodes(ASTNode node1, ASTNode node2)
