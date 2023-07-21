@@ -362,7 +362,12 @@ public class SchemeParser
 
     public ASTNode parse()
     {
-        ASTNode ast = parseRule("PROGRAM");
+        return parse("PROGRAM");
+    }
+
+    public ASTNode parse(String rootRule)
+    {
+        ASTNode ast = parseRule(rootRule);
         if (iterator.hasNext()) {
             throw new RuntimeException("Something bad happened.");
         }
