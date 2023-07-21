@@ -15,6 +15,7 @@ public class SchemeParserTest
     @Test
     public void parseVariables()
     {
+        // This should test variables which are outside any expression.
     }
 
     @Test
