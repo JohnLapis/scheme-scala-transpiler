@@ -20,30 +20,37 @@ public class SchemeParserTest
     public void parseProcedureCalls()
     {
         ASTNode expectedAst =
-            node("PROGRAM",
-                 node("COMMAND_OR_DEFINITION",
-                      node("COMMAND",
-                           node("EXPRESSION",
-                                node("PROCEDURE_CALL",
-                                     node("OPERATOR",
-                                          node("EXPRESSION",
-                                               node("IDENTIFIER", "+"))),
-                                     node("OPERAND",
-                                          node("EXPRESSION",
-                                               node("LITERAL",
-                                                    node("SELF_EVALUATING",
-                                                         node("NUMBER", "5"))))),
-                                     node("OPERAND",
-                                          node("EXPRESSION",
-                                               node("LITERAL",
-                                                    node("SELF_EVALUATING",
-                                                         node("NUMBER", "4"))))))))));
-        List<Token> tokenList = tokens("DELIMITER", "(",
-                                       "IDENTIFIER", "+",
-                                       "NUMBER", "5",
-                                       "NUMBER", "4",
-                                       "DELIMITER", ")");
-        SchemeParser parser = new SchemeParser(tokenList);
+            n("PROGRAM",
+              n("COMMAND_OR_DEFINITION",
+                n("COMMAND",
+                  n("EXPRESSION",
+                    n("PROCEDURE_CALL",
+                      n("OPERATOR",
+                        n("EXPRESSION",
+                          n("IDENTIFIER", "+"))),
+                      n("OPERAND",
+                        n("EXPRESSION",
+                          n("LITERAL",
+                            n("SELF_EVALUATING",
+                              n("NUMBER", "1"))))),
+                      n("OPERAND",
+                        n("EXPRESSION",
+                          n("PROCEDURE_CALL",
+                            n("OPERATOR",
+                              n("EXPRESSION",
+                                n("IDENTIFIER", "*"))),
+                            n("OPERAND",
+                              n("EXPRESSION",
+                                n("LITERAL",
+                                  n("SELF_EVALUATING",
+                                    n("NUMBER", "2"))))),
+                            n("OPERAND",
+                              n("EXPRESSION",
+                                n("LITERAL",
+                                  n("SELF_EVALUATING",
+                                    n("NUMBER", "3")))))))))))));
+        String code = "(+ 1 (* 2 3))";
+        SchemeParser parser = new SchemeParser(SchemeScanner.tokenize(code));
         compareASTNodes(expectedAst, parser.parse());
     }
 
@@ -75,12 +82,12 @@ public class SchemeParserTest
         }
     }
 
-    static ASTNode node(String type, ASTNode... children)
+    static ASTNode n(String type, ASTNode... children)
     {
         return new ASTNode(type, null, children);
     }
 
-    static ASTNode node(String type, String value, ASTNode... children)
+    static ASTNode n(String type, String value, ASTNode... children)
     {
         return new ASTNode(type, value, children);
     }

@@ -388,7 +388,7 @@ public class SchemeParser
                 if (!iterator.hasNext()) break;
 
                 token = iterator.next();
-                if (term.value == token.value) {
+                if (term.value.equals(token.value)) {
                     termMatched = true;
                     if (token.type == TokenType.IDENTIFIER) {
                         node.value = token.value;

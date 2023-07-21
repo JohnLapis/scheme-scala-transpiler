@@ -41,21 +41,66 @@ public class SchemeScannerTest
         assertTrue(false);
     }
 
-
     @Test
-    public void schemeCodeShouldBeTokenized()
+    public void tokenizeProcedureCalls()
     {
         List<Token> expectedTokens =
             Arrays.asList(new Token(TokenType.DELIMITER, "("),
                           new Token(TokenType.IDENTIFIER, "+"),
                           new Token(TokenType.NUMBER, "1"),
                           new Token(TokenType.DELIMITER, "("),
-                          new Token(TokenType.IDENTIFIER, "+"),
+                          new Token(TokenType.IDENTIFIER, "*"),
                           new Token(TokenType.NUMBER, "2"),
                           new Token(TokenType.NUMBER, "3"),
                           new Token(TokenType.DELIMITER, ")"),
                           new Token(TokenType.DELIMITER, ")"));
-        compareLists(expectedTokens, SchemeScanner.tokenize("(+ 1 (+ 2 3))"));
+        compareLists(expectedTokens, SchemeScanner.tokenize("(+ 1 (* 2 3))"));
+    }
+
+    @Test
+    public void tokenizeProcedures()
+    {
+        String code = """
+(define fact
+  (lambda (n)
+    (if (= n 0)
+      1
+      (* n (fact (- n 1))))))
+    """;
+        List<Token> expectedTokens =
+            Arrays.asList(
+                          new Token(TokenType.DELIMITER, "("),
+                          new Token(TokenType.IDENTIFIER, "define"),
+                          new Token(TokenType.IDENTIFIER, "fact"),
+                          new Token(TokenType.DELIMITER, "("),
+                          new Token(TokenType.IDENTIFIER, "lambda"),
+                          new Token(TokenType.DELIMITER, "("),
+                          new Token(TokenType.IDENTIFIER, "n"),
+                          new Token(TokenType.DELIMITER, ")"),
+                          new Token(TokenType.DELIMITER, "("),
+                          new Token(TokenType.IDENTIFIER, "if"),
+                          new Token(TokenType.DELIMITER, "("),
+                          new Token(TokenType.IDENTIFIER, "="),
+                          new Token(TokenType.IDENTIFIER, "n"),
+                          new Token(TokenType.NUMBER, "0"),
+                          new Token(TokenType.DELIMITER, ")"),
+                          new Token(TokenType.NUMBER, "1"),
+                          new Token(TokenType.DELIMITER, "("),
+                          new Token(TokenType.IDENTIFIER, "*"),
+                          new Token(TokenType.IDENTIFIER, "n"),
+                          new Token(TokenType.DELIMITER, "("),
+                          new Token(TokenType.IDENTIFIER, "fact"),
+                          new Token(TokenType.DELIMITER, "("),
+                          new Token(TokenType.IDENTIFIER, "-"),
+                          new Token(TokenType.IDENTIFIER, "n"),
+                          new Token(TokenType.NUMBER, "1"),
+                          new Token(TokenType.DELIMITER, ")"),
+                          new Token(TokenType.DELIMITER, ")"),
+                          new Token(TokenType.DELIMITER, ")"),
+                          new Token(TokenType.DELIMITER, ")"),
+                          new Token(TokenType.DELIMITER, ")"),
+                          new Token(TokenType.DELIMITER, ")"));
+        compareLists(expectedTokens, SchemeScanner.tokenize(code));
     }
 
     static void compareLists(List<?> list1, List<?> list2)
