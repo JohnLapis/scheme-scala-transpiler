@@ -388,6 +388,12 @@ public class SchemeParser
             case TERMINAL:
                 if (!iterator.hasNext()) break;
 
+                // In this case, no token should be consumed.
+                if (term.value.equals("")) {
+                    termMatched = true;
+                    break;
+                }
+
                 token = iterator.next();
                 if (term.value.equals(token.value)) {
                     termMatched = true;

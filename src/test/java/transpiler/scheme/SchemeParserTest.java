@@ -61,10 +61,105 @@ public class SchemeParserTest
     {
     }
 
-    @Ignore("TODO")
     @Test
-    public void parseConditionals()
+    public void parseConditionalsWithAlternate()
     {
+        String code = """
+    (if (= n 0)
+        1   (* n (fact (- n 1))))
+            """;
+        ASTNode expectedAst =
+            n("PROGRAM",
+              n("COMMAND_OR_DEFINITION",
+                n("COMMAND",
+                  n("EXPRESSION",
+                    n("CONDITIONAL", "if",
+                      n("TEST",
+                        n("EXPRESSION",
+                          n("PROCEDURE_CALL",
+                            n("OPERATOR",
+                              n("EXPRESSION",
+                                n("IDENTIFIER", "="))),
+                            n("OPERAND",
+                              n("EXPRESSION",
+                                n("IDENTIFIER", "n"))),
+                            n("OPERAND",
+                              n("EXPRESSION",
+                                n("LITERAL",
+                                  n("SELF_EVALUATING",
+                                    n("NUMBER", "0")))))))),
+                      n("CONSEQUENT",
+                        n("EXPRESSION",
+                          n("LITERAL",
+                            n("SELF_EVALUATING",
+                              n("NUMBER", "1"))))),
+                      n("ALTERNATE",
+                        n("EXPRESSION",
+                          n("PROCEDURE_CALL",
+                            n("OPERATOR",
+                              n("EXPRESSION",
+                                n("IDENTIFIER", "*"))),
+                            n("OPERAND",
+                              n("EXPRESSION",
+                                n("IDENTIFIER", "n"))),
+                            n("OPERAND",
+                              n("EXPRESSION",
+                                n("PROCEDURE_CALL",
+                                  n("OPERATOR",
+                                    n("EXPRESSION",
+                                      n("IDENTIFIER", "fact"))),
+                                  n("OPERAND",
+                                    n("EXPRESSION",
+                                      n("PROCEDURE_CALL",
+                                        n("OPERATOR",
+                                          n("EXPRESSION",
+                                            n("IDENTIFIER", "-"))),
+                                        n("OPERAND",
+                                          n("EXPRESSION",
+                                            n("IDENTIFIER", "n"))),
+                                        n("OPERAND",
+                                          n("EXPRESSION",
+                                            n("LITERAL",
+                                              n("SELF_EVALUATING",
+                                                n("NUMBER", "1")))))))))))))))))));
+        SchemeParser parser = new SchemeParser(SchemeScanner.tokenize(code));
+        compareASTNodes(expectedAst, parser.parse());
+    }
+
+    @Test
+    public void parseConditionalsWithoutAlternate()
+    {
+        String code = """
+    (if (= n 0) 1)
+            """;
+        ASTNode expectedAst =
+            n("PROGRAM",
+              n("COMMAND_OR_DEFINITION",
+                n("COMMAND",
+                  n("EXPRESSION",
+                    n("CONDITIONAL", "if",
+                      n("TEST",
+                        n("EXPRESSION",
+                          n("PROCEDURE_CALL",
+                            n("OPERATOR",
+                              n("EXPRESSION",
+                                n("IDENTIFIER", "="))),
+                            n("OPERAND",
+                              n("EXPRESSION",
+                                n("IDENTIFIER", "n"))),
+                            n("OPERAND",
+                              n("EXPRESSION",
+                                n("LITERAL",
+                                  n("SELF_EVALUATING",
+                                    n("NUMBER", "0")))))))),
+                      n("CONSEQUENT",
+                        n("EXPRESSION",
+                          n("LITERAL",
+                            n("SELF_EVALUATING",
+                              n("NUMBER", "1"))))),
+                      n("ALTERNATE"))))));
+        SchemeParser parser = new SchemeParser(SchemeScanner.tokenize(code));
+        compareASTNodes(expectedAst, parser.parse());
     }
 
     @Ignore("TODO")
