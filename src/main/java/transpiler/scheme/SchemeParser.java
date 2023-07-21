@@ -398,21 +398,23 @@ public class SchemeParser
                 }
 
                 token = iterator.next();
-                if (term.value.equals(token.value)) {
-                    termMatched = true;
-                    if (token.type == TokenType.IDENTIFIER) {
-                        node.value = token.value;
-                    }
+                if (!term.value.equals(token.value)) break;
+
+                termMatched = true;
+
+                if (token.type == TokenType.IDENTIFIER) {
+                    node.value = token.value;
                 }
                 break;
             case PATTERN:
                 if (!iterator.hasNext()) break;
 
                 token = iterator.next();
-                if (patternMatches(term.value, token.value)) {
-                    termMatched = true;
-                    node.value = token.value;
-                }
+                if (!patternMatches(term.value, token.value)) break;
+
+                termMatched = true;
+
+                node.value = token.value;
                 break;
             case NONTERMINAL:
                 ASTNode ruleNode = parseRule(term.value);
