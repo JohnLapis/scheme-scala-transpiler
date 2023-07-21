@@ -385,6 +385,8 @@ public class SchemeParser
             boolean tokenMatched = false;
             switch (term.type) {
             case TERMINAL:
+                if (!iterator.hasNext()) break;
+
                 token = iterator.next();
                 if (term.value == token.value) {
                     tokenMatched = true;
@@ -394,10 +396,12 @@ public class SchemeParser
                 }
                 break;
             case PATTERN:
+                if (!iterator.hasNext()) break;
+
                 token = iterator.next();
                 if (patternMatches(term.value, token.value)) {
                     tokenMatched = true;
-                    node.addChild(new ASTNode(token.value));
+                    node.value = token.value;
                 }
                 break;
             case NONTERMINAL:
@@ -443,7 +447,7 @@ public class SchemeParser
         for (Expr expr : rule.exprs) {
             node = parseExpr(expr);
             if (node != null) {
-                node.value = ruleName;
+                node.type = ruleName;
                 break;
             }
 
