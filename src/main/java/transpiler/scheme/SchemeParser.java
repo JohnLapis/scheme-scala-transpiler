@@ -601,12 +601,12 @@ public class SchemeParser
         boolean termMatched = false;
         switch (term.type) {
         case TERMINAL:
-            if (!tokenIter.hasNext()) break;
-
             if (term.value.equals("")) {
                 termMatched = true;
                 break;
             }
+
+            if (!tokenIter.hasNext()) break;
 
             token = tokenIter.next();
             if (term.value.equals(token.value)) {
