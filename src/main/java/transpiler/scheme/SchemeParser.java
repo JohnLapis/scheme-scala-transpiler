@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.ListIterator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.regex.Matcher;
@@ -431,14 +432,20 @@ public class SchemeParser
                                                       termIter,
                                                       termMatched,
                                                       termMatchCounts);
-            if (currentState == ParserState.STOP) {
-                return node;
-            } else if (currentState == ParserState.BACKTRACK) {
-                return null;
+
+            if (currentState == ParserState.STOP) return node;
+
+            if (currentState == ParserState.BACKTRACK) {
+                try {
+                    backtrack(termIter, termMatchCounts);
+                    currentState = ParserState.NEXT;
+                } catch (NoSuchElementException e) {
+                    return null;
+                }
             }
 
             if (currentState == ParserState.REPEAT) {
-                termMatchCounts.put(term, termMatchCounts.get(term) + 1);
+                termMatchCounts.put(term, termMatchCounts.getOrDefault(term, 0) + 1);
             } else if (currentState == ParserState.NEXT) {
                 term = termIter.next();
                 termMatchCounts.put(term, 0);
@@ -476,6 +483,28 @@ public class SchemeParser
         } else {
             while (iter.nextIndex() != index + 1) {
                 iter.previous();
+            }
+        }
+    }
+
+    void backtrack(ListIterator<Term> iter, Map<Term, Integer> termMatchCounts)
+    {
+        Term curTerm;
+        Integer matches;
+        while (true) {
+            curTerm = iter.previous();
+            matches = termMatchCounts.get(curTerm);
+
+            // When backtracking, the term to backtract to must have matched at
+            // least 1 more time than the minimum required.
+            if (
+                curTerm.modifier == Modifier.ASTERISK && matches >= 1
+                || curTerm.modifier == Modifier.PLUS && matches >= 2
+                ) {
+                termMatchCounts.put(curTerm, matches - 1);
+                break;
+            } else {
+                termMatchCounts.remove(curTerm);
             }
         }
     }
