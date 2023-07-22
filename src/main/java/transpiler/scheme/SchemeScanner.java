@@ -189,7 +189,8 @@ public class SchemeScanner
                TokenType.DELIMITER, or("(", ")", "#(", "#u8(", "'", "`", ",", ",@", ".").regex
             );
 
-    // IDENTIFIER must be last.
+    // IDENTIFIER must be last because, otherwise, some tokens might be incorrectly
+    // interpreted as an identifier.
     static TokenType[] ORDERED_TOKEN_TYPES = {
         TokenType.BOOLEAN,
         TokenType.NUMBER,

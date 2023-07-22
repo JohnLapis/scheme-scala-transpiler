@@ -420,6 +420,26 @@ public class SchemeParser
         return ast;
     }
 
+    ASTNode parseRule(String ruleName) {
+        ASTNode node = null;
+        Rule rule = definitions.get(ruleName);
+        int curIndex = tokenIter.nextIndex() - 1;
+
+        // Try to match one of the expressions in the rule.
+        for (Expr expr : rule.exprs) {
+            node = parseExpr(expr);
+            if (node != null) {
+                node.type = ruleName;
+                break;
+            }
+
+            // Reset position of cursor if expression doesn't match.
+            moveIteratorTo(tokenIter, curIndex);
+        }
+
+        return node;
+    }
+
     ASTNode parseExpr(Expr expr)
     {
         ListIterator<Term> termIter = expr.terms.listIterator();
@@ -430,6 +450,7 @@ public class SchemeParser
         while (true) {
             TermMatch match = matchTerm(term);
             boolean termMatched = match != null;
+
             if (termMatched) {
                 termMatches.get(term).add(match);
             }
@@ -453,7 +474,7 @@ public class SchemeParser
             }
 
             if (currentState == ParserState.REPEAT) {
-                // nothing
+                // Do nothing.
             } else if (currentState == ParserState.NEXT) {
                 term = termIter.next();
                 termMatches.put(term, new ArrayList<>());
@@ -463,26 +484,7 @@ public class SchemeParser
         }
     }
 
-    ASTNode parseRule(String ruleName)
-    {
-        ASTNode node = null;
-        Rule rule = definitions.get(ruleName);
-        int curIndex = tokenIter.nextIndex() - 1;
-
-        for (Expr expr : rule.exprs) {
-            node = parseExpr(expr);
-            if (node != null) {
-                node.type = ruleName;
-                break;
-            }
-
-            moveIteratorTo(tokenIter, curIndex);
-        }
-
-        return node;
-    }
-
-    void moveIteratorTo(ListIterator<?> iter, int index)
+    static void moveIteratorTo(ListIterator<?> iter, int index)
     {
         if (iter.nextIndex() <= index + 1) {
             while (iter.nextIndex() != index + 1) {
@@ -570,7 +572,7 @@ public class SchemeParser
         return ParserState.valueOf(stateName);
     }
 
-    ASTNode buildASTFromTermMatches(Map<Term, List<TermMatch>> termMatches)
+    static ASTNode buildASTFromTermMatches(Map<Term, List<TermMatch>> termMatches)
     {
         ASTNode node = new ASTNode();
         for (Map.Entry<Term, List<TermMatch>> entry : termMatches.entrySet()) {
@@ -600,6 +602,7 @@ public class SchemeParser
         Object match = null;
         Integer matchStart = tokenIter.nextIndex();
         boolean termMatched = false;
+
         switch (term.type) {
         case TERMINAL:
             if (term.value.equals("")) {
@@ -610,19 +613,15 @@ public class SchemeParser
             if (!tokenIter.hasNext()) break;
 
             token = tokenIter.next();
-            if (term.value.equals(token.value)) {
-                termMatched = true;
-                match = token;
-            }
+            termMatched = term.value.equals(token.value);
+            if (termMatched) match = token;
             break;
         case PATTERN:
             if (!tokenIter.hasNext()) break;
 
             token = tokenIter.next();
-            if (patternMatches(term.value, token.value)) {
-                termMatched = true;
-                match = token;
-            }
+            termMatched = patternMatches(term.value, token.value);
+            if (termMatched) match = token;
             break;
         case NONTERMINAL:
             match = parseRule(term.value);
@@ -633,9 +632,11 @@ public class SchemeParser
         return termMatched ? new TermMatch(matchStart, match) : null;
     }
 
-    Boolean patternMatches(String pattern, String string)
+    static Boolean patternMatches(String pattern, String string)
     {
-        Matcher matcher = Pattern.compile("^" + pattern).matcher(string);
-        return matcher.find();
+        return Pattern
+            .compile("^" + pattern)
+            .matcher(string)
+            .find();
     }
 }
