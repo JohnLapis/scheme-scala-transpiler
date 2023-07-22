@@ -425,44 +425,12 @@ public class SchemeParser
         Term term = termIter.next();
         Map<Term, List<TermMatch>> termMatches = new LinkedHashMap<>();
         termMatches.put(term, new ArrayList<>());
+
         while (true) {
-            Token token;
-            Object match = null;
-            boolean termMatched = false;
-            Integer matchStart = tokenIter.nextIndex();
-            switch (term.type) {
-            case TERMINAL:
-                if (!tokenIter.hasNext()) break;
-
-                // In this case, no token should be consumed.
-                if (term.value.equals("")) {
-                    termMatched = true;
-                    break;
-                }
-
-                token = tokenIter.next();
-                if (!term.value.equals(token.value)) break;
-
-                termMatched = true;
-                match = token;
-                break;
-            case PATTERN:
-                if (!tokenIter.hasNext()) break;
-
-                token = tokenIter.next();
-                if (!patternMatches(term.value, token.value)) break;
-
-                termMatched = true;
-                match = token;
-                break;
-            case NONTERMINAL:
-                match = parseRule(term.value);
-                termMatched = match != null;
-                break;
-            }
-
+            TermMatch match = matchTerm(term);
+            boolean termMatched = match != null;
             if (termMatched) {
-                termMatches.get(term).add(new TermMatch(matchStart, match));
+                termMatches.get(term).add(match);
             }
 
             ParserState currentState = getCurrenState(term,
@@ -623,6 +591,45 @@ public class SchemeParser
             }
         }
         return node;
+    }
+
+    TermMatch matchTerm(Term term)
+    {
+        Token token;
+        Object match = null;
+        Integer matchStart = tokenIter.nextIndex();
+        boolean termMatched = false;
+        switch (term.type) {
+        case TERMINAL:
+            if (!tokenIter.hasNext()) break;
+
+            if (term.value.equals("")) {
+                termMatched = true;
+                break;
+            }
+
+            token = tokenIter.next();
+            if (term.value.equals(token.value)) {
+                termMatched = true;
+                match = token;
+            }
+            break;
+        case PATTERN:
+            if (!tokenIter.hasNext()) break;
+
+            token = tokenIter.next();
+            if (patternMatches(term.value, token.value)) {
+                termMatched = true;
+                match = token;
+            }
+            break;
+        case NONTERMINAL:
+            match = parseRule(term.value);
+            termMatched = match != null;
+            break;
+        }
+
+        return termMatched ? new TermMatch(matchStart, match) : null;
     }
 
     Boolean patternMatches(String pattern, String string)
