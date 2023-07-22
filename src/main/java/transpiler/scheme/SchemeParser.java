@@ -11,6 +11,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import transpiler.ASTNode;
 
+enum ParserState {REPEAT, NEXT, STOP, BACKTRACK}
+
 enum Modifier {PLUS, ASTERISK}
 
 enum TermType {TERMINAL, NONTERMINAL, PATTERN}
@@ -381,9 +383,9 @@ public class SchemeParser
     ASTNode parseExpr(Expr expr)
     {
         ASTNode node = new ASTNode();
-        Iterator<Term> termIter = expr.terms.iterator();
+        ListIterator<Term> termIter = expr.terms.listIterator();
         Term term = termIter.next();
-        int matches = 0;
+        Map<Term, Integer> termMatchCounts = new HashMap<>();
         while (true) {
             Token token;
             boolean termMatched = false;
@@ -425,29 +427,25 @@ public class SchemeParser
                 break;
             }
 
-            if (termMatched) {
-                if (term.modifier == Modifier.PLUS
-                    || term.modifier == Modifier.ASTERISK) {
-                    matches++;
-                } else if (termIter.hasNext()) {
-                    term = termIter.next();
-                    matches = 0;
-                } else {
-                    break;
-                }
-            } else if (term.modifier == Modifier.ASTERISK && matches >= 0
-                       || term.modifier == Modifier.PLUS && matches >= 1) {
-                if (termIter.hasNext()) {
-                    term = termIter.next();
-                    matches = 0;
-                } else {
-                    break;
-                }
-            } else {
+            ParserState currentState = getCurrenState(term,
+                                                      termIter,
+                                                      termMatched,
+                                                      termMatchCounts);
+            if (currentState == ParserState.STOP) {
+                return node;
+            } else if (currentState == ParserState.BACKTRACK) {
                 return null;
             }
+
+            if (currentState == ParserState.REPEAT) {
+                termMatchCounts.put(term, termMatchCounts.get(term) + 1);
+            } else if (currentState == ParserState.NEXT) {
+                term = termIter.next();
+                termMatchCounts.put(term, 0);
+            } else {
+                throw new RuntimeException("Unexpected parser state");
+            }
         }
-        return node;
     }
 
     ASTNode parseRule(String ruleName)
@@ -463,17 +461,46 @@ public class SchemeParser
                 break;
             }
 
-            backtrackTo(curIndex);
+            moveIteratorTo(iterator, curIndex);
         }
 
         return node;
     }
 
-    void backtrackTo(int index)
+    void moveIteratorTo(ListIterator<?> iter, int index)
     {
-        while (iterator.nextIndex() != index + 1) {
-            iterator.previous();
+        if (iter.nextIndex() <= index + 1) {
+            while (iter.nextIndex() != index + 1) {
+                iter.next();
+            }
+        } else {
+            while (iter.nextIndex() != index + 1) {
+                iter.previous();
+            }
         }
+    }
+
+    ParserState getCurrenState(Term term,
+                               ListIterator<Term> termIter,
+                               boolean termMatched,
+                               Map<Term, Integer> termMatchCounts)
+    {
+        String stateName;
+        if (term.modifier == Modifier.PLUS) {
+            stateName =
+                termMatched ? "REPEAT"
+                : termMatchCounts.get(term) == 0 ? "BACKTRACK"
+                : termIter.hasNext() ? "NEXT" : "STOP";
+        } else if (term.modifier == Modifier.ASTERISK) {
+            stateName =
+                termMatched ? "REPEAT"
+                : termIter.hasNext() ? "NEXT" : "STOP";
+        } else {
+            stateName =
+                !termMatched ? "BACKTRACK"
+                : termIter.hasNext() ? "NEXT" : "STOP";
+        }
+        return ParserState.valueOf(stateName);
     }
 
     Boolean patternMatches(String pattern, String string)
