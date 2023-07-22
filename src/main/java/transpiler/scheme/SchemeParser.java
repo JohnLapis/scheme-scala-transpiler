@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import transpiler.ASTNode;
@@ -17,6 +18,18 @@ enum ParserState {REPEAT, NEXT, STOP, BACKTRACK}
 enum Modifier {PLUS, ASTERISK}
 
 enum TermType {TERMINAL, NONTERMINAL, PATTERN}
+
+class TermMatch
+{
+    Integer index;
+    Object value;
+
+    public TermMatch(Integer index, Object value)
+    {
+        this.index = index;
+        this.value = value;
+    }
+}
 
 class Term
 {
@@ -282,18 +295,18 @@ public class SchemeParser
                "UINTEGER_10", nonterminal(SchemeScanner.UINTEGER(10))
                );
 
-    ListIterator<Token> iterator;
+    ListIterator<Token> tokenIter;
     Map<String, Rule> definitions;
 
     public SchemeParser(List<Token> tokenList, Map<String, Rule> definitions)
     {
-        this.iterator = tokenList.listIterator();
+        this.tokenIter = tokenList.listIterator();
         this.definitions = definitions;
     }
 
     public SchemeParser(List<Token> tokenList)
     {
-        this.iterator = tokenList.listIterator();
+        this.tokenIter = tokenList.listIterator();
         this.definitions = DEFAULT_DEFINITIONS;
     }
 
@@ -400,7 +413,7 @@ public class SchemeParser
     public ASTNode parse(String rootRule)
     {
         ASTNode ast = parseRule(rootRule);
-        if (iterator.hasNext()) {
+        if (tokenIter.hasNext()) {
             throw new RuntimeException("Something bad happened.");
         }
         return ast;
@@ -408,16 +421,18 @@ public class SchemeParser
 
     ASTNode parseExpr(Expr expr)
     {
-        ASTNode node = new ASTNode();
         ListIterator<Term> termIter = expr.terms.listIterator();
         Term term = termIter.next();
-        Map<Term, Integer> termMatchCounts = new HashMap<>();
+        Map<Term, List<TermMatch>> termMatches = new LinkedHashMap<>();
+        termMatches.put(term, new ArrayList<>());
         while (true) {
             Token token;
+            Object match = null;
             boolean termMatched = false;
+            Integer matchStart = tokenIter.nextIndex();
             switch (term.type) {
             case TERMINAL:
-                if (!iterator.hasNext()) break;
+                if (!tokenIter.hasNext()) break;
 
                 // In this case, no token should be consumed.
                 if (term.value.equals("")) {
@@ -425,44 +440,43 @@ public class SchemeParser
                     break;
                 }
 
-                token = iterator.next();
+                token = tokenIter.next();
                 if (!term.value.equals(token.value)) break;
 
                 termMatched = true;
-
-                if (token.type == TokenType.IDENTIFIER) {
-                    node.value = token.value;
-                }
+                match = token;
                 break;
             case PATTERN:
-                if (!iterator.hasNext()) break;
+                if (!tokenIter.hasNext()) break;
 
-                token = iterator.next();
+                token = tokenIter.next();
                 if (!patternMatches(term.value, token.value)) break;
 
                 termMatched = true;
-
-                node.value = token.value;
+                match = token;
                 break;
             case NONTERMINAL:
-                ASTNode ruleNode = parseRule(term.value);
-                if (ruleNode != null) {
-                    termMatched = true;
-                    node.addChild(ruleNode);
-                }
+                match = parseRule(term.value);
+                termMatched = match != null;
                 break;
+            }
+
+            if (termMatched) {
+                termMatches.get(term).add(new TermMatch(matchStart, match));
             }
 
             ParserState currentState = getCurrenState(term,
                                                       termIter,
                                                       termMatched,
-                                                      termMatchCounts);
+                                                      termMatches);
 
-            if (currentState == ParserState.STOP) return node;
+            if (currentState == ParserState.STOP) {
+                return buildASTFromTermMatches(termMatches);
+            }
 
             if (currentState == ParserState.BACKTRACK) {
                 try {
-                    backtrack(termIter, termMatchCounts);
+                    backtrack(termIter, termMatches);
                     currentState = ParserState.NEXT;
                 } catch (NoSuchElementException e) {
                     return null;
@@ -470,10 +484,10 @@ public class SchemeParser
             }
 
             if (currentState == ParserState.REPEAT) {
-                termMatchCounts.put(term, termMatchCounts.getOrDefault(term, 0) + 1);
+                // nothing
             } else if (currentState == ParserState.NEXT) {
                 term = termIter.next();
-                termMatchCounts.put(term, 0);
+                termMatches.put(term, new ArrayList<>());
             } else {
                 throw new RuntimeException("Unexpected parser state");
             }
@@ -484,7 +498,7 @@ public class SchemeParser
     {
         ASTNode node = null;
         Rule rule = definitions.get(ruleName);
-        int curIndex = iterator.nextIndex() - 1;
+        int curIndex = tokenIter.nextIndex() - 1;
 
         for (Expr expr : rule.exprs) {
             node = parseExpr(expr);
@@ -493,7 +507,7 @@ public class SchemeParser
                 break;
             }
 
-            moveIteratorTo(iterator, curIndex);
+            moveIteratorTo(tokenIter, curIndex);
         }
 
         return node;
@@ -512,38 +526,68 @@ public class SchemeParser
         }
     }
 
-    void backtrack(ListIterator<Term> iter, Map<Term, Integer> termMatchCounts)
+    /**
+     * Find the last term which matched greedily (i.e. could have matched at least 1
+     * less token)
+     * If found, removes the last match, and positions the token and term
+     * iterators' cursors as they were before the last match.
+     * Otherwise, throw NoSuchElementException.
+     */
+    void backtrack(ListIterator<Term> termIter, Map<Term, List<TermMatch>> termMatches)
     {
-        Term curTerm;
-        Integer matches;
+        int initialTermIndex = termIter.nextIndex() - 1;
         while (true) {
-            curTerm = iter.previous();
-            matches = termMatchCounts.get(curTerm);
+            Term term;
+            try {
+                term = termIter.previous();
+            } catch (NoSuchElementException e) {
+                moveIteratorTo(termIter, initialTermIndex);
+                throw e;
+            }
 
-            // When backtracking, the term to backtract to must have matched at
-            // least 1 more time than the minimum required.
-            if (
-                curTerm.modifier == Modifier.ASTERISK && matches >= 1
-                || curTerm.modifier == Modifier.PLUS && matches >= 2
-                ) {
-                termMatchCounts.put(curTerm, matches - 1);
+            List<TermMatch> matches = termMatches.get(term);
+
+            if (termMatchedGreedily(term, matches.size())) {
+                int startOfLastMatch = matches.get(matches.size() - 1).index;
+                moveIteratorTo(tokenIter, startOfLastMatch - 1);
+                matches.remove(matches.size() - 1);
+
+                // Cursor should always be after the current term. Since this method
+                // calls `previous` at least once, wee need to call `next` once to
+                // keep the cursor after the element.
+                termIter.next();
                 break;
             } else {
-                termMatchCounts.remove(curTerm);
+                // All matches are removed because, if an element is backtracked and
+                // can't be matched less times, it's as if it never matched anything.
+                matches.clear();
             }
         }
+    }
+
+    static boolean termMatchedGreedily(Term term, int matches)
+    {
+        int minimumMatchesRequired;
+        if (term.modifier == Modifier.ASTERISK) {
+            minimumMatchesRequired = 0;
+        } else if (term.modifier == Modifier.PLUS) {
+            minimumMatchesRequired = 1;
+        } else {
+            minimumMatchesRequired = 1;
+        }
+        return matches > minimumMatchesRequired;
     }
 
     ParserState getCurrenState(Term term,
                                ListIterator<Term> termIter,
                                boolean termMatched,
-                               Map<Term, Integer> termMatchCounts)
+                               Map<Term, List<TermMatch>> termMatches)
     {
         String stateName;
         if (term.modifier == Modifier.PLUS) {
             stateName =
                 termMatched ? "REPEAT"
-                : termMatchCounts.get(term) == 0 ? "BACKTRACK"
+                : termMatches.get(term).size() == 0 ? "BACKTRACK"
                 : termIter.hasNext() ? "NEXT" : "STOP";
         } else if (term.modifier == Modifier.ASTERISK) {
             stateName =
@@ -555,6 +599,30 @@ public class SchemeParser
                 : termIter.hasNext() ? "NEXT" : "STOP";
         }
         return ParserState.valueOf(stateName);
+    }
+
+    ASTNode buildASTFromTermMatches(Map<Term, List<TermMatch>> termMatches)
+    {
+        ASTNode node = new ASTNode();
+        for (Map.Entry<Term, List<TermMatch>> entry : termMatches.entrySet()) {
+            TermType termType = entry.getKey().type;
+            for (TermMatch match : entry.getValue()) {
+                if (match.value == null) continue;
+
+                if (termType == TermType.TERMINAL
+                    && match.value instanceof Token token
+                    && token.type == TokenType.IDENTIFIER) {
+                    node.value = token.value;
+                } else if (termType == TermType.PATTERN
+                           && match.value instanceof Token token) {
+                    node.value = token.value;
+                } else if (termType == TermType.NONTERMINAL
+                           && match.value instanceof ASTNode child) {
+                    node.addChild(child);
+                }
+            }
+        }
+        return node;
     }
 
     Boolean patternMatches(String pattern, String string)
