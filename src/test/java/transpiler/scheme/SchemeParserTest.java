@@ -6,6 +6,7 @@ import transpiler.ASTNode;
 import org.junit.Test;
 import org.junit.Ignore;
 import java.util.List;
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -263,13 +264,95 @@ public class SchemeParserTest
         compareASTNodes(expectedAst, parser.parse());
     }
 
+    @Test
+    public void backtrackExprWithOneModifier()
+    {
+        /**
+         * Input: "aaa"
+         * The parser states will evolve as following:
+         * - R1 matches "aaa", backtrack
+         * - R1 matches "aa", R2 matches "a"
+         */
+        Map<String, Rule> definitions =
+            SchemeParser.buildDefinitions
+            (
+             "R", new Rule(new Expr(new Term("R1",
+                                             TermType.NONTERMINAL,
+                                             Modifier.ASTERISK),
+                                    new Term("R2", TermType.NONTERMINAL))),
+             "R1", new Rule(new Expr(new Term("a", TermType.TERMINAL))),
+             "R2", new Rule(new Expr(new Term("a", TermType.TERMINAL)))
+             );
+        SchemeParser parser = new SchemeParser(tokens("IDENTIFIER", "a",
+                                                      "IDENTIFIER", "a",
+                                                      "IDENTIFIER", "a"),
+                                               definitions);
+        ASTNode expectedAst = n("R", n("R1", "a"), n("R1", "a"), n("R2", "a"));
+        compareASTNodes(expectedAst, parser.parse("R"));
+    }
+
+    @Test
+    public void backtrackExprWithTwoModifiers()
+    {
+        /**
+         * Input: "aaaaa"
+         * The parser states will evolve as following:
+         * - R1 matches "aaaaa"
+         * - R1 matches "aaaa", R2 matches "a"
+         * - R1 matches "aaa", R2 matches "aa"
+         * - R1 matches "aaa", R2 matches "a", R3 matches "a"
+        */
+
+        Map<String, Rule> definitions =
+            SchemeParser.buildDefinitions
+            (
+             "R", new Rule(new Expr(new Term("R1",
+                                             TermType.NONTERMINAL,
+                                             Modifier.ASTERISK),
+                                    new Term("R2",
+                                             TermType.NONTERMINAL,
+                                             Modifier.PLUS),
+                                    new Term("R3", TermType.NONTERMINAL))),
+             "R1", new Rule(new Expr(new Term("a", TermType.TERMINAL))),
+             "R2", new Rule(new Expr(new Term("a", TermType.TERMINAL))),
+             "R3", new Rule(new Expr(new Term("a", TermType.TERMINAL)))
+             );
+        SchemeParser parser = new SchemeParser(tokens("IDENTIFIER", "a",
+                                                      "IDENTIFIER", "a",
+                                                      "IDENTIFIER", "a",
+                                                      "IDENTIFIER", "a",
+                                                      "IDENTIFIER", "a"),
+                                               definitions);
+        ASTNode expectedAst = n("R",
+                                n("R1", "a"),
+                                n("R1", "a"),
+                                n("R1", "a"),
+                                n("R2", "a"),
+                                n("R3", "a"));
+        compareASTNodes(expectedAst, parser.parse("R"));
+    }
+
     static void compareASTNodes(ASTNode node1, ASTNode node2)
+    {
+        try {
+            _compareASTNodes(node1, node2);
+        } catch (Throwable t) {
+            System.out.println("Expected AST node:");
+            System.out.println(node1);
+            System.out.println("Received AST node:");
+            System.out.println(node2);
+            throw t;
+        }
+
+    }
+
+    static void _compareASTNodes(ASTNode node1, ASTNode node2)
     {
         assertTrue(node1.equals(node2));
         int childrenCount = node1.children.size();
         assertEquals(node1.children.size(), node2.children.size());
         for (int i = 0; i < childrenCount; i++) {
-            compareASTNodes(node1.children.get(i), node2.children.get(i));
+            _compareASTNodes(node1.children.get(i), node2.children.get(i));
         }
     }
 

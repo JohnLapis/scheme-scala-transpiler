@@ -88,7 +88,7 @@ public class ASTNode
     public String toString()
     {
         StringBuilder buffer = new StringBuilder(50);
-        print(buffer, "\n", "");
+        print(buffer, "", "");
         return buffer.toString();
     }
 

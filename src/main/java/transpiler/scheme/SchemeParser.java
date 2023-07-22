@@ -31,6 +31,13 @@ class Term
         this.modifier = null;
     }
 
+    public Term(String value, TermType type)
+    {
+        this.value = value;
+        this.type = type;
+        this.modifier = null;
+    }
+
     public Term(String value, TermType type, Modifier modifier)
     {
         this.value = value;
@@ -48,6 +55,11 @@ class Expr
         this.terms = new ArrayList<Term>();
     }
 
+    public Expr(Term... terms)
+    {
+        this.terms = Arrays.asList(terms);
+    }
+
     public Expr(List<Term> terms)
     {
         this.terms = terms;
@@ -63,6 +75,11 @@ class Rule
         this.exprs = new ArrayList<Expr>();
     }
 
+    public Rule(Expr... exprs)
+    {
+        this.exprs = Arrays.asList(exprs);
+    }
+
     public Rule(List<Expr> exprs)
     {
         this.exprs = exprs;
@@ -71,7 +88,7 @@ class Rule
 
 public class SchemeParser
 {
-    static Map<String, Rule> DEFINITIONS =
+    static Map<String, Rule> DEFAULT_DEFINITIONS =
         buildDefinitions(
                /* Programs and definitions */
                "PROGRAM", nonterminal(terms(term("IMPORT_DECLARATION", "*"),
@@ -266,10 +283,18 @@ public class SchemeParser
                );
 
     ListIterator<Token> iterator;
+    Map<String, Rule> definitions;
+
+    public SchemeParser(List<Token> tokenList, Map<String, Rule> definitions)
+    {
+        this.iterator = tokenList.listIterator();
+        this.definitions = definitions;
+    }
 
     public SchemeParser(List<Token> tokenList)
     {
         this.iterator = tokenList.listIterator();
+        this.definitions = DEFAULT_DEFINITIONS;
     }
 
     static Expr convertToExpr(Object obj)
@@ -458,7 +483,7 @@ public class SchemeParser
     ASTNode parseRule(String ruleName)
     {
         ASTNode node = null;
-        Rule rule = DEFINITIONS.get(ruleName);
+        Rule rule = definitions.get(ruleName);
         int curIndex = iterator.nextIndex() - 1;
 
         for (Expr expr : rule.exprs) {
