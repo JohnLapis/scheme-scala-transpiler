@@ -1,4 +1,4 @@
-package transpiler.lua;
+package transpiler.scala;
 
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 import transpiler.ASTNode;
 import transpiler.IntermediateRepresentation;
 
-public class LuaScanner
+public class ScalaScanner
 {
     public static String generate(ASTNode ast)
     {

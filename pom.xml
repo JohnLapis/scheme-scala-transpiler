@@ -5,10 +5,10 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>transpiler</groupId>
-  <artifactId>scheme-lua-transpiler</artifactId>
+  <artifactId>scheme-scala-transpiler</artifactId>
   <version>1.0-SNAPSHOT</version>
 
-  <name>scheme-lua-transpiler</name>
+  <name>scheme-scala-transpiler</name>
   <!-- FIXME change it to the project's website -->
   <url>http://www.example.com</url>
 

@@ -11,7 +11,7 @@ import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import transpiler.scheme.SchemeScanner;
-import transpiler.lua.LuaScanner;
+import transpiler.scala.ScalaScanner;
 
 public class Transpiler {
     public static void main(String[] args) throws IOException, ParseException, Exception {
@@ -23,16 +23,16 @@ public class Transpiler {
         String inputFilename = args[0];
         Path path = Paths.get(inputFilename);
         String schemeCode = String.join("\n", Files.readAllLines(path));
-        String luaCode = convertSchemeToLuaCode(schemeCode);
-        try (PrintWriter outputStream = new PrintWriter("output.lua")) {
-            outputStream.println(luaCode);
+        String scalaCode = convertSchemeToScalaCode(schemeCode);
+        try (PrintWriter outputStream = new PrintWriter("output.scala")) {
+            outputStream.println(scalaCode);
         }
     }
 
-    public static String convertSchemeToLuaCode(String code)
+    public static String convertSchemeToScalaCode(String code)
     {
         ASTNode schemeAST = SchemeScanner.generateAST(code);
         IntermediateRepresentation ir = SchemeScanner.convertASTToIR(schemeAST);
-        return LuaScanner.generate(LuaScanner.convertIRToAST(ir));
+        return ScalaScanner.generate(ScalaScanner.convertIRToAST(ir));
     }
 }
