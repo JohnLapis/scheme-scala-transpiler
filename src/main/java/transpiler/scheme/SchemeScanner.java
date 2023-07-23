@@ -287,12 +287,6 @@ public class SchemeScanner
         return new Token(null, "");
     }
 
-    public static IntermediateRepresentation convertASTToIR(ASTNode ast)
-    {
-        return new IntermediateRepresentation();
-    }
-
-
     public static ASTNode generateAST(String code)
     {
         SchemeParser parser = new SchemeParser(tokenize(code));
