@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.lang.StringBuilder;
 import java.util.List;
+import java.util.function.Function;
 
 public class ASTNode
 {
@@ -45,15 +46,27 @@ public class ASTNode
         setChildren(children);
     }
 
-    public void addChild(ASTNode node)
+    public void addChildren(List<ASTNode> nodes)
     {
-        node.parent = this;
-        this.children.add(node);
+        addChildren(nodes.toArray(new ASTNode[0]));
+    }
+
+    public void addChildren(ASTNode... nodes)
+    {
+        for (ASTNode node : nodes) {
+            node.parent = this;
+            this.children.add(node);
+        }
     }
 
     public void setChildren(ASTNode[] children)
     {
-        this.children = Arrays.asList(children);
+        setChildren(Arrays.asList(children));
+    }
+
+    public void setChildren(List<ASTNode> children)
+    {
+        this.children = children;
         for (ASTNode child : children) {
             child.parent = this;
         }
@@ -66,6 +79,80 @@ public class ASTNode
             node = this.parent;
         }
         return node;
+    }
+
+    List<ASTNode> getAllByPath(String path)
+    {
+        return getAll(splitPath(path));
+    }
+
+    List<ASTNode> getAll(String... types)
+    {
+        if (types.length == 0) return Arrays.asList(this);
+
+        List<ASTNode> all = new ArrayList<>();
+        for (ASTNode child : children) {
+            if (!child.type.equals(types[0])) continue;
+
+            if (types.length == 1) {
+                all.add(child);
+            } else {
+                all.addAll(child.getAll(Arrays.copyOfRange(types, 1, types.length)));
+            }
+        }
+        return all;
+    }
+
+    ASTNode getByPath(String path)
+    {
+        return get(splitPath(path));
+    }
+
+    ASTNode get(String... types)
+    {
+        if (types.length == 0) return this;
+
+        for (ASTNode child : children) {
+            if (!child.type.equals(types[0])) continue;
+
+            return types.length == 1 ?
+                child : child.get(Arrays.copyOfRange(types, 1, types.length));
+        }
+
+        return null;
+    }
+
+    public static String[] splitPath(String path)
+    {
+        return path.equals("") ? new String[0] : path.split("\\.");
+    }
+
+    public static String joinPaths(String... paths)
+    {
+        List<String> pathSegments = new ArrayList<>();
+        for (String path : paths) {
+            if (!path.equals("")) {
+                pathSegments.add(path);
+            }
+        }
+        return String.join(".", pathSegments);
+    }
+
+
+    void apply(Function<ASTNode, ?> function)
+    {
+        apply(this, function);
+    }
+
+    /**
+     * This function traverses the tree in a depth-first order.
+     */
+    static void apply(ASTNode node, Function<ASTNode, ?> function)
+    {
+        function.apply(node);
+        for (ASTNode child : node.children) {
+            apply(child, function);
+        }
     }
 
     @Override

@@ -1,0 +1,66 @@
+package transpiler.scheme;
+
+public enum SchemeNodeType {
+    PROGRAM,
+    COMMAND_OR_DEFINITION,
+    DEFINITION,
+    DEF_FORMALS,
+    CONSTRUCTOR,
+    FIELD_SPEC,
+    FIELD_NAME,
+    ACCESSOR,
+    MUTATOR,
+    SYNTAX_DEFINITION,
+
+    /* Libraries */
+    LIBRARY,
+    LIBRARY_NAME,
+    LIBRARY_NAME_PART,
+    LIBRARY_DECLARATION,
+    IMPORT_DECLARATION,
+    EXPORT_SPEC,
+    IMPORT_SET,
+    IMPORT_RENAMING,
+    COND_EXPAND_CLAUSE,
+    FEATURE_REQUIREMENT,
+
+    /* External representations */
+    DATUM,
+    SIMPLE_DATUM,
+    COMPOUND_DATUM,
+    LIST,
+    ABBREVIATION,
+    ABBREV_PREFIX,
+    VECTOR,
+    LABEL,
+
+    /* Primitive expressions */
+    EXPRESSION,
+    LITERAL,
+    SELF_EVALUATING,
+    QUOTATION,
+    PROCEDURE_CALL,
+    OPERATOR,
+    OPERAND,
+    LAMBDA_EXPRESSION,
+    FORMALS,
+    VARIABLE,
+    BODY,
+    SEQUENCE,
+    COMMAND,
+    CONDITIONAL,
+    TEST,
+    CONSEQUENT,
+    ALTERNATE,
+    ASSIGNMENT,
+    INCLUDER,
+
+    /* Patterns */
+    BOOLEAN,
+    NUMBER,
+    CHARACTER,
+    STRING,
+    IDENTIFIER,
+    BYTEVECTOR,
+    UINTEGER_10
+}

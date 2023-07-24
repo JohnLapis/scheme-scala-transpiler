@@ -589,7 +589,7 @@ public class SchemeParser
                     node.value = token.value;
                 } else if (termType == TermType.NONTERMINAL
                            && match.value instanceof ASTNode child) {
-                    node.addChild(child);
+                    node.addChildren(child);
                 }
             }
         }

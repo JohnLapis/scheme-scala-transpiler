@@ -1,4 +1,4 @@
 package transpiler.scala;
 
-public enum NodeType {
+public enum ScalaNodeType {
 }
