@@ -58,7 +58,7 @@ public class SchemeParserTest
     }
 
     @Test
-    public void parseProcedures()
+    public void parseProcedureWithOneVariable()
     {
         String code = """
 (define fact
@@ -75,8 +75,7 @@ public class SchemeParserTest
                   n("EXPRESSION",
                     n("LAMBDA_EXPRESSION", "lambda",
                       n("FORMALS",
-                        n("VARIABLE",
-                          n("IDENTIFIER", "n"))),
+                        n("IDENTIFIER", "n")),
                       n("BODY",
                         n("SEQUENCE",
                           n("EXPRESSION",
