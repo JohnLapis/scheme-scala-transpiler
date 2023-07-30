@@ -1,6 +1,5 @@
-package transpiler.scheme;
+package transpiler;
 
-import transpiler.ASTNode;
 import static transpiler.ASTNodeTestUtils.compareASTNodes;
 import static transpiler.ASTNodeTestUtils.n;
 import org.junit.Test;
@@ -10,64 +9,75 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class SchemeParserTest
+public class IntermediateRepresentationTest
 {
-    @Ignore("TODO")
     @Test
-    public void parseVariables()
-    {
-        // This should test variables which are outside any expression.
-    }
-
-    @Test
-    public void parseProcedureCalls()
+    public void sieveProcedureCalls()
     {
         ASTNode expectedAst =
-            n("PROGRAM",
-              n("COMMAND_OR_DEFINITION",
-                n("COMMAND",
+            n("EXPRESSION",
+              n("FUNCTION_CALL",
+                n("NAME",
+                  n("EXPRESSION",
+                    n("IDENTIFIER", "+"))),
+                n("ARGUMENT",
+                  n("EXPRESSION",
+                    n("LITERAL",
+                      n("NUMBER", "1")))),
+                n("ARGUMENT",
+                  n("EXPRESSION",
+                    n("FUNCTION_CALL",
+                      n("NAME",
+                        n("EXPRESSION",
+                          n("IDENTIFIER", "*"))),
+                      n("ARGUMENT",
+                        n("EXPRESSION",
+                          n("LITERAL",
+                            n("NUMBER", "2")))),
+                      n("ARGUMENT",
+                        n("EXPRESSION",
+                          n("LITERAL",
+                            n("NUMBER", "3")))))))));
+
+        ASTNode schemeAst =
+            n("EXPRESSION",
+              n("PROCEDURE_CALL",
+                n("OPERATOR",
+                  n("EXPRESSION",
+                    n("IDENTIFIER", "+"))),
+                n("OPERAND",
+                  n("EXPRESSION",
+                    n("LITERAL",
+                      n("SELF_EVALUATING",
+                        n("NUMBER", "1"))))),
+                n("OPERAND",
                   n("EXPRESSION",
                     n("PROCEDURE_CALL",
                       n("OPERATOR",
                         n("EXPRESSION",
-                          n("IDENTIFIER", "+"))),
+                          n("IDENTIFIER", "*"))),
                       n("OPERAND",
                         n("EXPRESSION",
                           n("LITERAL",
                             n("SELF_EVALUATING",
-                              n("NUMBER", "1"))))),
+                              n("NUMBER", "2"))))),
                       n("OPERAND",
                         n("EXPRESSION",
-                          n("PROCEDURE_CALL",
-                            n("OPERATOR",
-                              n("EXPRESSION",
-                                n("IDENTIFIER", "*"))),
-                            n("OPERAND",
-                              n("EXPRESSION",
-                                n("LITERAL",
-                                  n("SELF_EVALUATING",
-                                    n("NUMBER", "2"))))),
-                            n("OPERAND",
-                              n("EXPRESSION",
-                                n("LITERAL",
-                                  n("SELF_EVALUATING",
-                                    n("NUMBER", "3")))))))))))));
-        String code = "(+ 1 (* 2 3))";
-        SchemeParser parser = new SchemeParser(SchemeScanner.tokenize(code));
-        compareASTNodes(expectedAst, parser.parse());
+                          n("LITERAL",
+                            n("SELF_EVALUATING",
+                              n("NUMBER", "3"))))))))));
+
+        IntermediateRepresentation ir = new IntermediateRepresentation(schemeAst);
+        ir.sieveAST();
+        compareASTNodes(expectedAst, ir.ast);
     }
 
+    @Ignore("TODO")
     @Test
-    public void parseProcedures()
+    public void sieveProcedures()
     {
-        String code = """
-(define fact
-  (lambda (n)
-    (if (= n 0)
-        1
-      (* n (fact (- n 1))))))
-            """;
-        ASTNode expectedAst =
+        ASTNode expectedAst = null;
+        ASTNode schemeAst =
             n("PROGRAM",
               n("COMMAND_OR_DEFINITION",
                 n("DEFINITION", "define",
@@ -129,18 +139,16 @@ public class SchemeParserTest
                                                     n("LITERAL",
                                                       n("SELF_EVALUATING",
                                                         n("NUMBER", "1")))))))))))))))))))))));
-        SchemeParser parser = new SchemeParser(SchemeScanner.tokenize(code));
-        compareASTNodes(expectedAst, parser.parse());
+         IntermediateRepresentation ir = new IntermediateRepresentation(schemeAst);
+         ir.sieveAST();
+         compareASTNodes(expectedAst, ir.ast);
     }
 
+    @Ignore("TODO")
     @Test
-    public void parseConditionalsWithAlternate()
+    public void sieveConditionalsWithAlternate()
     {
-        String code = """
-    (if (= n 0)
-        1   (* n (fact (- n 1))))
-            """;
-        ASTNode expectedAst =
+        ASTNode schemeAst =
             n("PROGRAM",
               n("COMMAND_OR_DEFINITION",
                 n("COMMAND",
@@ -194,17 +202,17 @@ public class SchemeParserTest
                                             n("LITERAL",
                                               n("SELF_EVALUATING",
                                                 n("NUMBER", "1")))))))))))))))))));
-        SchemeParser parser = new SchemeParser(SchemeScanner.tokenize(code));
-        compareASTNodes(expectedAst, parser.parse());
+        IntermediateRepresentation ir = new IntermediateRepresentation(schemeAst);
+        ir.sieveAST();
+        compareASTNodes(expectedAst, ir.ast);
     }
 
+    @Ignore("TODO")
     @Test
-    public void parseConditionalsWithoutAlternate()
+    public void sieveConditionalsWithoutAlternate()
     {
-        String code = """
-    (if (= n 0) 1)
-            """;
-        ASTNode expectedAst =
+        ASTNode expectedAst = null;
+        ASTNode schemeAst =
             n("PROGRAM",
               n("COMMAND_OR_DEFINITION",
                 n("COMMAND",
@@ -230,17 +238,17 @@ public class SchemeParserTest
                             n("SELF_EVALUATING",
                               n("NUMBER", "1"))))),
                       n("ALTERNATE"))))));
-        SchemeParser parser = new SchemeParser(SchemeScanner.tokenize(code));
-        compareASTNodes(expectedAst, parser.parse());
+        IntermediateRepresentation ir = new IntermediateRepresentation(schemeAst);
+        ir.sieveAST();
+        compareASTNodes(expectedAst, ir.ast);
     }
 
+    @Ignore("TODO")
     @Test
-    public void parseAssignments()
+    public void sieveAssignments()
     {
-        String code = """
-    (set! nIsZero (= n 0))
-            """;
-        ASTNode expectedAst =
+        ASTNode expectedAst = null;
+        ASTNode schemeAst =
             n("PROGRAM",
               n("COMMAND_OR_DEFINITION",
                 n("COMMAND",
@@ -260,88 +268,8 @@ public class SchemeParserTest
                               n("LITERAL",
                                 n("SELF_EVALUATING",
                                 n("NUMBER", "0"))))))))))));
-        SchemeParser parser = new SchemeParser(SchemeScanner.tokenize(code));
-        compareASTNodes(expectedAst, parser.parse());
-    }
-
-    @Test
-    public void backtrackExprWithOneModifier()
-    {
-        /**
-         * Input: "aaa"
-         * The parser states will evolve as following:
-         * - R1 matches "aaa", backtrack
-         * - R1 matches "aa", R2 matches "a"
-         */
-        Map<String, Rule> definitions =
-            SchemeParser.buildDefinitions
-            (
-             "R", new Rule(new Expr(new Term("R1",
-                                             TermType.NONTERMINAL,
-                                             Modifier.ASTERISK),
-                                    new Term("R2", TermType.NONTERMINAL))),
-             "R1", new Rule(new Expr(new Term("a", TermType.TERMINAL))),
-             "R2", new Rule(new Expr(new Term("a", TermType.TERMINAL)))
-             );
-        SchemeParser parser = new SchemeParser(tokens("IDENTIFIER", "a",
-                                                      "IDENTIFIER", "a",
-                                                      "IDENTIFIER", "a"),
-                                               definitions);
-        ASTNode expectedAst = n("R", n("R1", "a"), n("R1", "a"), n("R2", "a"));
-        compareASTNodes(expectedAst, parser.parse("R"));
-    }
-
-    @Test
-    public void backtrackExprWithTwoModifiers()
-    {
-        /**
-         * Input: "aaaaa"
-         * The parser states will evolve as following:
-         * - R1 matches "aaaaa"
-         * - R1 matches "aaaa", R2 matches "a"
-         * - R1 matches "aaa", R2 matches "aa"
-         * - R1 matches "aaa", R2 matches "a", R3 matches "a"
-        */
-
-        Map<String, Rule> definitions =
-            SchemeParser.buildDefinitions
-            (
-             "R", new Rule(new Expr(new Term("R1",
-                                             TermType.NONTERMINAL,
-                                             Modifier.ASTERISK),
-                                    new Term("R2",
-                                             TermType.NONTERMINAL,
-                                             Modifier.PLUS),
-                                    new Term("R3", TermType.NONTERMINAL))),
-             "R1", new Rule(new Expr(new Term("a", TermType.TERMINAL))),
-             "R2", new Rule(new Expr(new Term("a", TermType.TERMINAL))),
-             "R3", new Rule(new Expr(new Term("a", TermType.TERMINAL)))
-             );
-        SchemeParser parser = new SchemeParser(tokens("IDENTIFIER", "a",
-                                                      "IDENTIFIER", "a",
-                                                      "IDENTIFIER", "a",
-                                                      "IDENTIFIER", "a",
-                                                      "IDENTIFIER", "a"),
-                                               definitions);
-        ASTNode expectedAst = n("R",
-                                n("R1", "a"),
-                                n("R1", "a"),
-                                n("R1", "a"),
-                                n("R2", "a"),
-                                n("R3", "a"));
-        compareASTNodes(expectedAst, parser.parse("R"));
-    }
-
-    static List<Token> tokens(Object... objs)
-    {
-        List<Token> tokenList = new ArrayList<>();
-        for (int i = 0; i < objs.length; i += 2) {
-            if (objs[i] instanceof String t && objs[i + 1] instanceof String v) {
-                tokenList.add(new Token(TokenType.valueOf(t), v));
-            } else {
-                throw new RuntimeException("Expected (TokenType, String) pair.");
-            }
-        }
-        return tokenList;
+        IntermediateRepresentation ir = new IntermediateRepresentation(schemeAst);
+        ir.sieveAST();
+        compareASTNodes(expectedAst, ir.ast);
     }
 }
