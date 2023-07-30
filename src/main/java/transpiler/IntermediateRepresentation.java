@@ -8,6 +8,17 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 import java.util.function.Function;
 
+class NodePathNotMatched extends RuntimeException
+{
+    public NodePathNotMatched(String path, ASTNode node)
+    {
+        super(String.join("\n",
+                          "No nodes match the path.",
+                          "Path: " + path,
+                          "Node:",
+                          node.toString()));
+    }
+}
 
 public class IntermediateRepresentation
 {
@@ -171,12 +182,7 @@ public class IntermediateRepresentation
             ASTNode foundNode = sourceNode.getByPath(conversionNode.value);
 
             if (foundNode == null) {
-                String errorMessage =
-                    String.join("\n",
-                                "No node matches the path.",
-                                "Path: " + conversionNode.value,
-                                "Node:\n" + sourceNode.toString());
-                throw new RuntimeException(errorMessage);
+                throw new NodePathNotMatched(conversionNode.value, sourceNode);
             }
 
             node.value = foundNode.value;
@@ -207,12 +213,7 @@ public class IntermediateRepresentation
         List<ASTNode> foundNodes = sourceNode.getAllByPath(conversionNode.value);
 
         if (foundNodes.size() == 0) {
-            String errorMessage =
-                String.join("\n",
-                            "No nodes match the path.",
-                            "Path: " + conversionNode.value,
-                            "Node:\n" + sourceNode.toString());
-            throw new RuntimeException(errorMessage);
+            throw new NodePathNotMatched(conversionNode.value, sourceNode);
         }
 
         node.type = "loop";
