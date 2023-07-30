@@ -60,24 +60,25 @@ public class IntermediateRepresentation
     }
 
     static List<String> NODE_STATUSES = Arrays.asList("SIEVED");
+
     static Map<String, Map<String, ASTNode>> NODE_CONVERSIONS =
         buildConversions
         (
-         "LITERAL", cases("QUOTATION", n("LIST", "DATUM"),
-                          "SELF_EVALUATING", n("LITERAL", "")),
+         "LITERAL", cases("QUOTATION", n("LIST", "$DATUM"),
+                          "SELF_EVALUATING", n("LITERAL", "$")),
          "CONDITIONAL", n("CONDITIONAL",
-                          n("TEST", "TEST"),
-                          n("SEQUENCE", "CONSEQUENT"),
-                          n("ALTERNATE", "ALTERNATE")),
+                          n("TEST", "$TEST"),
+                          n("SEQUENCE", "$CONSEQUENT"),
+                          n("ALTERNATE", "$ALTERNATE")),
          "ASSIGNMENT", n("ASSIGNMENT",
-                         n("ID", "IDENTIFIER"),
-                         n("EXPRESSION", "EXPRESSION")),
+                         n("ID", "$IDENTIFIER"),
+                         n("EXPRESSION", "$EXPRESSION")),
          "LAMBDA_EXPRESSION", n("LAMBDA",
-                                n("PARAMS", "FORMALS"),
-                                n("EXPR", "BODY")),
+                                n("PARAMS", "$FORMALS"),
+                                n("EXPR", "$BODY")),
          "PROCEDURE_CALL", n("FUNCTION_CALL",
-                             n("NAME", "OPERATOR"),
-                             n("ARGUMENT", "OPERAND"))
+                             n("NAME", "$OPERATOR"),
+                             loop("$OPERAND", n("ARGUMENT", "$")))
          );
 
     ASTNode ast;
@@ -129,38 +130,58 @@ public class IntermediateRepresentation
         return new Conversion(cases);
     }
 
-    static ASTNode n(String scalaType, String nodePath, ASTNode... children)
+    static ASTNode loop(String value, ASTNode node)
     {
-        return new ASTNode(scalaType, nodePath, children);
+        return n("loop", value, node);
     }
 
-    static ASTNode n(String scalaType, ASTNode... children)
+    static ASTNode n(String type, String value, ASTNode... children)
     {
-        return n(scalaType, null, children);
+        return new ASTNode(type, value, children);
+    }
+
+    static ASTNode n(String type, ASTNode... children)
+    {
+        return n(type, null, children);
     }
 
     static ASTNode applyConversion(ASTNode sourceNode, ASTNode conversionNode)
     {
-        List<ASTNode> nodes = applyConversion(sourceNode, conversionNode, "");
-        if (nodes.size() != 1) {
-            throw new RuntimeException("Expected 1 node.");
-        }
-        return nodes.get(0);
+        return applyConversion(sourceNode, conversionNode, "");
     }
-
 
     /**
      * This method builds a nodes with the structure of conversionNode and data from
      * sourceNode. The nodePath represents the current depth in sourceNode.
      */
-    static List<ASTNode> applyConversion(ASTNode sourceNode,
+    static ASTNode applyConversion(ASTNode sourceNode,
                                          ASTNode conversionNode,
                                          String nodePath)
     {
-        List<ASTNode> nodes = new ArrayList<>();
+        ASTNode node = new ASTNode();
 
         if (conversionNode.value == null) {
-            nodes.add(new ASTNode(conversionNode.type));
+            node.type = conversionNode.type;
+        } else if (!conversionNode.value.startsWith("$")) {
+            node.type = conversionNode.type;
+            node.value = conversionNode.value;
+        } else if (!conversionNode.type.equals("loop")) {
+            nodePath = conversionNode.value;
+
+            ASTNode foundNode = sourceNode.getByPath(nodePath);
+
+            if (foundNode == null) {
+                String errorMessage =
+                    String.join("\n",
+                                "No node matches the path.",
+                                "Path: " + nodePath,
+                                "Node:\n" + sourceNode.toString());
+                throw new RuntimeException(errorMessage);
+            }
+
+            node.type = conversionNode.type;
+            node.value = foundNode.value;
+            node.setChildren(foundNode.children);
         } else {
             nodePath = conversionNode.value;
 
@@ -169,31 +190,37 @@ public class IntermediateRepresentation
             if (foundNodes.size() == 0) {
                 String errorMessage =
                     String.join("\n",
-                                "Path not found in node.",
+                                "No nodes match the path.",
                                 "Path: " + nodePath,
                                 "Node:\n" + sourceNode.toString());
                 throw new RuntimeException(errorMessage);
             }
 
+            node.type = conversionNode.type;
+
             for (ASTNode foundNode : foundNodes) {
-                ASTNode node = new ASTNode(conversionNode.type);
-                node.value = foundNode.value;
-                node.setChildren(foundNode.children);
-                nodes.add(node);
+                node.addChildren(applyConversion(foundNode,
+                                                 conversionNode.children.get(0)));
+            }
+            return node;
+        }
+
+        if (conversionNode.children.size() == 0) {
+            // TODO check if found node should be converted so that data is not lost
+        }
+
+        for (ASTNode conversionChild : conversionNode.children) {
+            ASTNode convertedChild = applyConversion(sourceNode,
+                    conversionChild,
+                    nodePath);
+            if (convertedChild.type == "loop") {
+                node.addChildren(convertedChild.children);
+            } else {
+                node.addChildren(convertedChild);
             }
         }
 
-        if (nodes.size() == 1) {
-            for (ASTNode conversionChild : conversionNode.children) {
-                nodes.get(0).addChildren(applyConversion(sourceNode,
-                                                         conversionChild,
-                                                         nodePath));
-            }
-        } else if (conversionNode.children.size() > 0) {
-            throw new RuntimeException("Conversion nodes which match multiple siblings, should not have children. Instead, a new node conversion should be created.");
-        }
-
-        return nodes;
+        return node;
     }
 
     static Boolean patternMatches(String pattern, String string) {

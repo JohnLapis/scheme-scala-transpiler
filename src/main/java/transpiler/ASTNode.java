@@ -129,6 +129,10 @@ public class ASTNode
 
     public static String[] splitPath(String path)
     {
+        if (!path.startsWith("$")) {
+            throw new RuntimeException("Expected \"$\" at the beginning of path");
+        }
+        path = path.substring(1);
         return path.equals("") ? new String[0] : path.split("\\.");
     }
 
