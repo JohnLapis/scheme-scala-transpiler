@@ -69,7 +69,7 @@ public class IntermediateRepresentation
                           n("ALTERNATE", "ALTERNATE")),
          "ASSIGNMENT", n("ASSIGNMENT",
                          n("ID", "IDENTIFIER"),
-                         n("EXPR", "EXPRESSION")),
+                         n("EXPRESSION", "EXPRESSION")),
          "LAMBDA_EXPRESSION", n("LAMBDA",
                                 n("PARAMS", "FORMALS"),
                                 n("EXPR", "BODY")),

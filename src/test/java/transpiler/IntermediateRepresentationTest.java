@@ -303,31 +303,42 @@ public class IntermediateRepresentationTest
         compareASTNodes(expectedAst, ir.ast);
     }
 
-    @Ignore("TODO")
     @Test
     public void sieveAssignments()
     {
-        ASTNode expectedAst = null;
-        ASTNode schemeAst =
-            n("PROGRAM",
-              n("COMMAND_OR_DEFINITION",
-                n("COMMAND",
-                  n("EXPRESSION",
-                    n("ASSIGNMENT", "set!",
-                      n("IDENTIFIER", "nIsZero"),
+        ASTNode expectedAst =
+            n("EXPRESSION",
+              n("ASSIGNMENT",
+                n("ID", "nIsZero"),
+                n("EXPRESSION",
+                  n("FUNCTION_CALL",
+                    n("NAME",
                       n("EXPRESSION",
-                        n("PROCEDURE_CALL",
-                          n("OPERATOR",
-                            n("EXPRESSION",
-                              n("IDENTIFIER", "="))),
-                          n("OPERAND",
-                            n("EXPRESSION",
-                              n("IDENTIFIER", "n"))),
-                          n("OPERAND",
-                            n("EXPRESSION",
-                              n("LITERAL",
-                                n("SELF_EVALUATING",
-                                n("NUMBER", "0"))))))))))));
+                        n("IDENTIFIER", "="))),
+                    n("ARGUMENT",
+                      n("EXPRESSION",
+                        n("IDENTIFIER", "n"))),
+                    n("ARGUMENT",
+                      n("EXPRESSION",
+                        n("LITERAL",
+                          n("NUMBER", "0"))))))));
+        ASTNode schemeAst =
+            n("EXPRESSION",
+              n("ASSIGNMENT", "set!",
+                n("IDENTIFIER", "nIsZero"),
+                n("EXPRESSION",
+                  n("PROCEDURE_CALL",
+                    n("OPERATOR",
+                      n("EXPRESSION",
+                        n("IDENTIFIER", "="))),
+                    n("OPERAND",
+                      n("EXPRESSION",
+                        n("IDENTIFIER", "n"))),
+                    n("OPERAND",
+                      n("EXPRESSION",
+                        n("LITERAL",
+                          n("SELF_EVALUATING",
+                            n("NUMBER", "0")))))))));
         IntermediateRepresentation ir = new IntermediateRepresentation(schemeAst);
         ir.sieveAST();
         compareASTNodes(expectedAst, ir.ast);
