@@ -145,18 +145,18 @@ public class IntermediateRepresentation
         return n(type, null, children);
     }
 
-    static ASTNode applyConversion(ASTNode sourceNode, ASTNode conversionNode)
-    {
-        return applyConversion(sourceNode, conversionNode, "");
-    }
-
     /**
      * This method builds a nodes with the structure of conversionNode and data from
-     * sourceNode. The nodePath represents the current depth in sourceNode.
+     * sourceNode.
      */
-    static ASTNode applyConversion(ASTNode sourceNode,
-                                         ASTNode conversionNode,
-                                         String nodePath)
+    static ASTNode applyConversion(ASTNode sourceNode, ASTNode conversionNode)
+    {
+        return conversionNode.type.equals("loop") ?
+            applyLoopConversion(sourceNode, conversionNode)
+            : applySimpleConversion(sourceNode, conversionNode);
+    }
+
+    static ASTNode applySimpleConversion(ASTNode sourceNode, ASTNode conversionNode)
     {
         ASTNode node = new ASTNode();
 
@@ -165,44 +165,22 @@ public class IntermediateRepresentation
         } else if (!conversionNode.value.startsWith("$")) {
             node.type = conversionNode.type;
             node.value = conversionNode.value;
-        } else if (!conversionNode.type.equals("loop")) {
-            nodePath = conversionNode.value;
+        } else {
+            node.type = conversionNode.type;
 
-            ASTNode foundNode = sourceNode.getByPath(nodePath);
+            ASTNode foundNode = sourceNode.getByPath(conversionNode.value);
 
             if (foundNode == null) {
                 String errorMessage =
                     String.join("\n",
                                 "No node matches the path.",
-                                "Path: " + nodePath,
+                                "Path: " + conversionNode.value,
                                 "Node:\n" + sourceNode.toString());
                 throw new RuntimeException(errorMessage);
             }
 
-            node.type = conversionNode.type;
             node.value = foundNode.value;
             node.setChildren(foundNode.children);
-        } else {
-            nodePath = conversionNode.value;
-
-            List<ASTNode> foundNodes = sourceNode.getAllByPath(nodePath);
-
-            if (foundNodes.size() == 0) {
-                String errorMessage =
-                    String.join("\n",
-                                "No nodes match the path.",
-                                "Path: " + nodePath,
-                                "Node:\n" + sourceNode.toString());
-                throw new RuntimeException(errorMessage);
-            }
-
-            node.type = conversionNode.type;
-
-            for (ASTNode foundNode : foundNodes) {
-                node.addChildren(applyConversion(foundNode,
-                                                 conversionNode.children.get(0)));
-            }
-            return node;
         }
 
         if (conversionNode.children.size() == 0) {
@@ -210,14 +188,38 @@ public class IntermediateRepresentation
         }
 
         for (ASTNode conversionChild : conversionNode.children) {
-            ASTNode convertedChild = applyConversion(sourceNode,
-                    conversionChild,
-                    nodePath);
+            ASTNode convertedChild = applyConversion(sourceNode, conversionChild);
             if (convertedChild.type == "loop") {
                 node.addChildren(convertedChild.children);
             } else {
                 node.addChildren(convertedChild);
             }
+        }
+
+        return node;
+
+    }
+
+    static ASTNode applyLoopConversion(ASTNode sourceNode, ASTNode conversionNode)
+    {
+        ASTNode node = new ASTNode();
+
+        List<ASTNode> foundNodes = sourceNode.getAllByPath(conversionNode.value);
+
+        if (foundNodes.size() == 0) {
+            String errorMessage =
+                String.join("\n",
+                            "No nodes match the path.",
+                            "Path: " + conversionNode.value,
+                            "Node:\n" + sourceNode.toString());
+            throw new RuntimeException(errorMessage);
+        }
+
+        node.type = "loop";
+
+        for (ASTNode foundNode : foundNodes) {
+            node.addChildren(applyConversion(foundNode,
+                                             conversionNode.children.get(0)));
         }
 
         return node;
