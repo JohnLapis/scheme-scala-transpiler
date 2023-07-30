@@ -58,11 +58,11 @@ public class SchemeParserTest
     }
 
     @Test
-    public void parseProcedureWithOneVariable()
+    public void parseProcedureWith1Variable_Syntax1()
     {
         String code = """
 (define fact
-  (lambda (n)
+  (lambda n
     (if (= n 0)
         1
       (* n (fact (- n 1))))))
@@ -128,6 +128,158 @@ public class SchemeParserTest
                                                     n("LITERAL",
                                                       n("SELF_EVALUATING",
                                                         n("NUMBER", "1")))))))))))))))))))))));
+        SchemeParser parser = new SchemeParser(SchemeScanner.tokenize(code));
+        compareASTNodes(expectedAst, parser.parse());
+    }
+
+    @Test
+    public void parseProcedureWith3Variables_Syntax1()
+    {
+        String code = """
+(define fact
+  (lambda (a b c)
+    (+ a b c)))
+            """;
+        ASTNode expectedAst =
+            n("PROGRAM",
+              n("COMMAND_OR_DEFINITION",
+                n("DEFINITION", "define",
+                  n("IDENTIFIER", "fact"),
+                  n("EXPRESSION",
+                    n("LAMBDA_EXPRESSION", "lambda",
+                      n("FORMALS",
+                        n("IDENTIFIER", "a"),
+                        n("IDENTIFIER", "b"),
+                        n("IDENTIFIER", "c")),
+                      n("BODY",
+                        n("SEQUENCE",
+                          n("EXPRESSION",
+                            n("PROCEDURE_CALL",
+                              n("OPERATOR",
+                                n("EXPRESSION",
+                                  n("IDENTIFIER", "+"))),
+                              n("OPERAND",
+                                n("EXPRESSION",
+                                  n("IDENTIFIER", "a"))),
+                              n("OPERAND",
+                                n("EXPRESSION",
+                                  n("IDENTIFIER", "b"))),
+                              n("OPERAND",
+                                n("EXPRESSION",
+                                  n("IDENTIFIER", "c"))))))))))));
+        SchemeParser parser = new SchemeParser(SchemeScanner.tokenize(code));
+        compareASTNodes(expectedAst, parser.parse());
+    }
+
+    @Test
+    public void parseProcedureWith3Variables_Syntax2()
+    {
+        String code = """
+(define (fact a b c)
+  (+ a b c))
+            """;
+        ASTNode expectedAst =
+            n("PROGRAM",
+              n("COMMAND_OR_DEFINITION",
+                n("DEFINITION", "define",
+                  n("IDENTIFIER", "fact"),
+                  n("DEF_FORMALS",
+                    n("IDENTIFIER", "a"),
+                    n("IDENTIFIER", "b"),
+                    n("IDENTIFIER", "c")),
+                  n("BODY",
+                    n("SEQUENCE",
+                      n("EXPRESSION",
+                        n("PROCEDURE_CALL",
+                          n("OPERATOR",
+                            n("EXPRESSION",
+                              n("IDENTIFIER", "+"))),
+                          n("OPERAND",
+                            n("EXPRESSION",
+                              n("IDENTIFIER", "a"))),
+                          n("OPERAND",
+                            n("EXPRESSION",
+                              n("IDENTIFIER", "b"))),
+                          n("OPERAND",
+                            n("EXPRESSION",
+                              n("IDENTIFIER", "c"))))))))));
+        SchemeParser parser = new SchemeParser(SchemeScanner.tokenize(code));
+        compareASTNodes(expectedAst, parser.parse());
+    }
+
+    @Test
+    public void parseProcedureWithDottedVariables_Syntax1()
+    {
+        String code = """
+(define fact
+  (lambda (a b . c)
+    (+ a b c)))
+            """;
+        ASTNode expectedAst =
+            n("PROGRAM",
+              n("COMMAND_OR_DEFINITION",
+                n("DEFINITION", "define",
+                  n("IDENTIFIER", "fact"),
+                  n("EXPRESSION",
+                    n("LAMBDA_EXPRESSION", "lambda",
+                      n("FORMALS",
+                        n("IDENTIFIER", "a"),
+                        n("IDENTIFIER", "b"),
+                        n("VAR_PARAMETER",
+                          n("IDENTIFIER", "c"))),
+                      n("BODY",
+                        n("SEQUENCE",
+                          n("EXPRESSION",
+                            n("PROCEDURE_CALL",
+                              n("OPERATOR",
+                                n("EXPRESSION",
+                                  n("IDENTIFIER", "+"))),
+                              n("OPERAND",
+                                n("EXPRESSION",
+                                  n("IDENTIFIER", "a"))),
+                              n("OPERAND",
+                                n("EXPRESSION",
+                                  n("IDENTIFIER", "b"))),
+                              n("OPERAND",
+                                n("EXPRESSION",
+                                  n("IDENTIFIER", "c"))))))))))));
+        SchemeParser parser = new SchemeParser(SchemeScanner.tokenize(code));
+        compareASTNodes(expectedAst, parser.parse());
+    }
+
+    @Test
+    public void parseProcedureWithDottedVariables_Syntax2()
+    {
+        String code = """
+(define (fact a b . c)
+  (+ a b c))
+            """;
+        ASTNode expectedAst =
+            n("PROGRAM",
+              n("COMMAND_OR_DEFINITION",
+                n("DEFINITION", "define",
+                  n("IDENTIFIER", "fact"),
+                  n("DEF_FORMALS",
+                    n("IDENTIFIER", "a"),
+                    n("IDENTIFIER", "b"),
+                    n("VAR_PARAMETER",
+                      n("IDENTIFIER", "c"))),
+                  n("BODY",
+                    n("SEQUENCE",
+                      n("EXPRESSION",
+                        n("PROCEDURE_CALL",
+                          n("OPERATOR",
+                            n("EXPRESSION",
+                              n("IDENTIFIER", "+"))),
+                          n("OPERAND",
+                            n("EXPRESSION",
+                              n("IDENTIFIER", "a"))),
+                          n("OPERAND",
+                            n("EXPRESSION",
+                              n("IDENTIFIER", "b"))),
+                          n("OPERAND",
+                            n("EXPRESSION",
+                              n("IDENTIFIER", "c"))))))))));
         SchemeParser parser = new SchemeParser(SchemeScanner.tokenize(code));
         compareASTNodes(expectedAst, parser.parse());
     }
