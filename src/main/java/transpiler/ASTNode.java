@@ -9,6 +9,7 @@ import java.util.function.Function;
 
 public class ASTNode
 {
+    public String status;
     public String type;
     public String value;
     ASTNode parent;
@@ -16,6 +17,7 @@ public class ASTNode
 
     public ASTNode()
     {
+        this.status = null;
         this.type = null;
         this.value = null;
         this.parent = null;
@@ -24,6 +26,7 @@ public class ASTNode
 
     public ASTNode(String type)
     {
+        this.status = null;
         this.type = type;
         this.value = null;
         this.parent = null;
@@ -32,6 +35,7 @@ public class ASTNode
 
     public ASTNode(String type, String value)
     {
+        this.status = null;
         this.type = type;
         this.value = value;
         this.parent = null;
@@ -40,6 +44,7 @@ public class ASTNode
 
     public ASTNode(String type, String value, ASTNode[] children)
     {
+        this.status = null;
         this.type = type;
         this.value = value;
         this.parent = null;

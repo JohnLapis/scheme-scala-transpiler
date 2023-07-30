@@ -7,8 +7,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 import java.util.function.Function;
-import transpiler.scala.ScalaNodeType;
-import transpiler.scheme.SchemeNodeType;
 
 
 public class IntermediateRepresentation
@@ -23,9 +21,14 @@ public class IntermediateRepresentation
          */
         public Void apply(ASTNode node)
         {
-            if (nodeIsConverted(node) || !conversionExists(node)) return null;
+            if (nodeWasSieved(node)) return null;
+
+            node.status = "SIEVED";
 
             Map<String, ASTNode> conversionCases = getConversions(node);
+
+            if (conversionCases == null) return null;
+
             ASTNode conversionNode = null;
             ASTNode sourceNode = null;
             for (Map.Entry<String, ASTNode> entry : conversionCases.entrySet()) {
@@ -45,9 +48,7 @@ public class IntermediateRepresentation
                 }
             }
 
-            if (sourceNode == null || conversionNode == null) {
-                return null;
-            }
+            if (sourceNode == null || conversionNode == null) return null;
 
             ASTNode convertedNode = applyConversion(sourceNode, conversionNode);
             node.value = convertedNode.value;
@@ -58,7 +59,8 @@ public class IntermediateRepresentation
         }
     }
 
-    static Map<SchemeNodeType, Map<String, ASTNode>> NODE_CONVERSIONS =
+    static List<String> NODE_STATUSES = Arrays.asList("SIEVED");
+    static Map<String, Map<String, ASTNode>> NODE_CONVERSIONS =
         buildConversions
         (
          "LITERAL", cases("QUOTATION", n("LIST", "DATUM"),
@@ -85,32 +87,27 @@ public class IntermediateRepresentation
         this.ast = ast;
     }
 
-    static boolean nodeIsConverted(ASTNode node)
+    static boolean nodeWasSieved(ASTNode node)
     {
-        return isScalaNodeType(node.type);
-    }
-
-    static boolean conversionExists(ASTNode node)
-    {
-        return NODE_CONVERSIONS.containsKey(SchemeNodeType.valueOf(node.type));
+        return node.status != null
+            && NODE_STATUSES.indexOf(node.status) > NODE_STATUSES.indexOf("SIEVED");
     }
 
     static Map<String, ASTNode> getConversions(ASTNode node)
     {
-        return NODE_CONVERSIONS.get(SchemeNodeType.valueOf(node.type));
+        return NODE_CONVERSIONS.get(node.type);
     }
 
-    static Map<SchemeNodeType, Map<String, ASTNode>> buildConversions(Object... objs)
+    static Map<String, Map<String, ASTNode>> buildConversions(Object... objs)
     {
-        Map<SchemeNodeType, Map<String, ASTNode>> conversions = new HashMap<>();
+        Map<String, Map<String, ASTNode>> conversions = new HashMap<>();
         for (int i = 0; i < objs.length; i += 2) {
             if (objs[i] instanceof String s
                 && objs[i + 1] instanceof Conversion conversion) {
-                conversions.put(SchemeNodeType.valueOf(s), conversion.cases);
+                conversions.put(s, conversion.cases);
             } else if (objs[i] instanceof String s
                        && objs[i + 1] instanceof ASTNode conversionNode) {
-                conversions.put(SchemeNodeType.valueOf(s),
-                                Map.of("", conversionNode));
+                conversions.put(s, Map.of("", conversionNode));
             } else {
                 throw new RuntimeException("Expected (String, Conversion | ASTNode) pair.");
             }
@@ -140,27 +137,6 @@ public class IntermediateRepresentation
     static ASTNode n(String scalaType, ASTNode... children)
     {
         return n(scalaType, null, children);
-    }
-
-    protected static <T extends Enum<T>> boolean isInEnum(Class<T> enumClass, String value)
-    {
-        try {
-            Enum.valueOf(enumClass, value);
-            return true;
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
-    }
-
-    static boolean isSchemeNodeType(String type)
-    {
-        return isInEnum(SchemeNodeType.class, type);
-    }
-
-    static boolean isScalaNodeType(String type)
-    {
-        // TODO return isInEnum(ScalaNodeType.class, type);
-        return !isSchemeNodeType(type);
     }
 
     static ASTNode applyConversion(ASTNode sourceNode, ASTNode conversionNode)
