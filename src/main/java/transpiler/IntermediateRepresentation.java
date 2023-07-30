@@ -41,27 +41,16 @@ public class IntermediateRepresentation
             if (conversionCases == null) return null;
 
             ASTNode conversionNode = null;
-            ASTNode sourceNode = null;
             for (Map.Entry<String, ASTNode> entry : conversionCases.entrySet()) {
-                String nodePath = entry.getKey();
-
-                if (nodePath.equals("")) {
-                    sourceNode = node;
-                    conversionNode = entry.getValue();
-                    break;
-                }
-
-                ASTNode matchingNode = node.get(nodePath);
-                if (matchingNode != null) {
-                    sourceNode = matchingNode;
+                if (node.getByPath(entry.getKey()) != null) {
                     conversionNode = entry.getValue();
                     break;
                 }
             }
 
-            if (sourceNode == null || conversionNode == null) return null;
+            if (conversionNode == null) return null;
 
-            ASTNode convertedNode = applyConversion(sourceNode, conversionNode);
+            ASTNode convertedNode = applyConversion(node, conversionNode);
             node.value = convertedNode.value;
             node.type = convertedNode.type;
             node.setChildren(convertedNode.children);
@@ -75,8 +64,8 @@ public class IntermediateRepresentation
     static Map<String, Map<String, ASTNode>> NODE_CONVERSIONS =
         buildConversions
         (
-         "LITERAL", cases("QUOTATION", n("LIST", "$DATUM"),
-                          "SELF_EVALUATING", n("LITERAL", "$")),
+         "LITERAL", cases("$QUOTATION", n("LIST", "$QUOTATION.DATUM"),
+                          "$SELF_EVALUATING", n("LITERAL", "$SELF_EVALUATING")),
          "CONDITIONAL", n("CONDITIONAL",
                           n("TEST", "$TEST"),
                           n("SEQUENCE", "$CONSEQUENT"),
@@ -85,18 +74,43 @@ public class IntermediateRepresentation
                          n("ID", "$IDENTIFIER"),
                          n("EXPRESSION", "$EXPRESSION")),
          "LAMBDA_EXPRESSION", n("LAMBDA",
-                                n("PARAMS", "$FORMALS"),
-                                n("EXPR", "$BODY")),
+                                n("PARAMS", "FORMALS"),
+                                n("BODY", "$BODY")),
+         "DEFINITION:define",
+         cases("$EXPRESSION", n("DEF_VAR",
+                                n("ID", "$IDENTIFIER"),
+                                n("EXPRESSION", "$EXPRESSION")),
+               "$DEF_FORMALS", n("DEF_VAR",
+                                 n("ID", "$IDENTIFIER"),
+                                 n("EXPRESSION",
+                                   n("LAMBDA",
+                                     n("PARAMS", "$DEF_FORMALS"),
+                                     n("BODY", "$BODY"))))),
+         "DEF_FORMALS", n("FORMALS", "$"),
+         "FORMALS",
+         cases("$VAR_PARAMETER", n("PARAMS",
+                                   loop("$IDENTIFIER",
+                                        n("PARAM", n("ID", "$"), n("TYPE", "Sch"))),
+                                   n("PARAM", "$VAR_PARAMETER")),
+               "$", n("PARAMS",
+                      loop("$IDENTIFIER",
+                           n("PARAM", n("ID", "$"), n("TYPE", "Sch"))))),
+         "VAR_PARAMETER", n("PARAM",
+                            n("ID", "$IDENTIFIER"),
+                            n("TYPE", "Sch*")),
          "PROCEDURE_CALL", n("FUNCTION_CALL",
                              n("NAME", "$OPERATOR"),
                              loop("$OPERAND", n("ARGUMENT", "$")))
          );
 
     ASTNode ast;
+    ConvertSchemeAST convertSchemeAST;
 
     public IntermediateRepresentation(ASTNode ast)
     {
         this.ast = ast;
+        this.convertSchemeAST = new ConvertSchemeAST();
+
     }
 
     static boolean nodeWasSieved(ASTNode node)
@@ -107,7 +121,10 @@ public class IntermediateRepresentation
 
     static Map<String, ASTNode> getConversions(ASTNode node)
     {
-        return NODE_CONVERSIONS.get(node.type);
+        Map<String, ASTNode> conversion = NODE_CONVERSIONS.get(node.type);
+        if (conversion != null) return conversion;
+        conversion = NODE_CONVERSIONS.get(node.type + ":" + node.value);
+        return conversion;
     }
 
     static Map<String, Map<String, ASTNode>> buildConversions(Object... objs)
@@ -119,7 +136,7 @@ public class IntermediateRepresentation
                 conversions.put(s, conversion.cases);
             } else if (objs[i] instanceof String s
                        && objs[i + 1] instanceof ASTNode conversionNode) {
-                conversions.put(s, Map.of("", conversionNode));
+                conversions.put(s, Map.of("$", conversionNode));
             } else {
                 throw new RuntimeException("Expected (String, Conversion | ASTNode) pair.");
             }
@@ -235,7 +252,7 @@ public class IntermediateRepresentation
 
     void sieveAST()
     {
-        ast.apply(new ConvertSchemeAST());
+        ast.apply(convertSchemeAST);
     }
 
     void addTypes()
