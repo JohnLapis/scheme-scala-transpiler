@@ -91,12 +91,12 @@ public class ASTNode
         return children.size() == 0;
     }
 
-    List<ASTNode> getAllByPath(String path)
+    public List<ASTNode> getAllByPath(String path)
     {
         return getAll(splitPath(path));
     }
 
-    List<ASTNode> getAll(String... types)
+    public List<ASTNode> getAll(String... types)
     {
         if (types.length == 0) return Arrays.asList(this);
 
@@ -113,12 +113,12 @@ public class ASTNode
         return all;
     }
 
-    boolean hasByPath(String path)
+    public boolean hasByPath(String path)
     {
         return getByPath(path) != null;
     }
 
-    ASTNode getByPath(String path)
+    public ASTNode getByPath(String path)
     {
         return get(splitPath(path));
     }
@@ -158,7 +158,7 @@ public class ASTNode
     }
 
 
-    void apply(Function<ASTNode, ?> function)
+    public void apply(Function<ASTNode, ?> function)
     {
         apply(this, function);
     }
@@ -166,7 +166,7 @@ public class ASTNode
     /**
      * This function traverses the tree in a depth-first order.
      */
-    static void apply(ASTNode node, Function<ASTNode, ?> function)
+    public static void apply(ASTNode node, Function<ASTNode, ?> function)
     {
         function.apply(node);
         for (ASTNode child : node.children) {
