@@ -74,6 +74,12 @@ public class IntermediateRepresentation
 
     static List<String> NODE_STATUSES = Arrays.asList("SIEVED");
 
+    /**
+     * Each conversion consists of a key of format "<TYPE>[:<VALUE>]" and cases. A
+     * case consists of a path and a conversion node. The first case to have its
+     * path matched by the source node will have its conversion node applied onto
+     * the source node.
+     */
     static Map<String, Map<String, ASTNode>> NODE_CONVERSIONS =
         buildConversions
         (
