@@ -12,6 +12,71 @@ import java.util.Arrays;
 public class IntermediateRepresentationTest
 {
     @Test
+    public void sieve_addTypes_command()
+    {
+        ASTNode expectedAst =
+            n("PROGRAM",
+              n("COMMAND",
+                n("EXPRESSION")));
+        ASTNode schemeAst =
+            n("PROGRAM",
+              n("COMMAND_OR_DEFINITION",
+                n("COMMAND",
+                  n("EXPRESSION"))));
+        IntermediateRepresentation ir = new IntermediateRepresentation(schemeAst);
+        ir.sieveAST();
+        ir.addTypes();
+        compareASTNodes(expectedAst, ir.ast);
+    }
+
+    @Test
+    public void sieve_addTypes_definition()
+    {
+        ASTNode expectedAst =
+            n("PROGRAM",
+              n("DEFINITION",
+                n("EXPRESSION")));
+        ASTNode schemeAst = n("PROGRAM",
+                n("COMMAND_OR_DEFINITION",
+                        n("DEFINITION",
+                          n("EXPRESSION"))));
+        IntermediateRepresentation ir = new IntermediateRepresentation(schemeAst);
+        ir.sieveAST();
+        ir.addTypes();
+        compareASTNodes(expectedAst, ir.ast);
+    }
+
+    @Test
+    public void sieve_addTypes_block()
+    {
+        ASTNode expectedAst =
+            n("PROGRAM",
+              n("BLOCK",
+                n("COMMAND",
+                  n("EXPRESSION")),
+                n("DEFINITION",
+                  n("EXPRESSION")),
+                n("COMMAND",
+                  n("EXPRESSION"))));
+        ASTNode schemeAst =
+            n("PROGRAM",
+              n("COMMAND_OR_DEFINITION", "begin",
+                n("COMMAND_OR_DEFINITION",
+                  n("COMMAND",
+                    n("EXPRESSION"))),
+                n("COMMAND_OR_DEFINITION",
+                  n("DEFINITION",
+                    n("EXPRESSION"))),
+                n("COMMAND_OR_DEFINITION",
+                  n("COMMAND",
+                    n("EXPRESSION")))));
+        IntermediateRepresentation ir = new IntermediateRepresentation(schemeAst);
+        ir.sieveAST();
+        ir.addTypes();
+        compareASTNodes(expectedAst, ir.ast);
+    }
+
+    @Test
     public void sieve_addTypes_variableDefinition()
     {
         ASTNode expectedAst =

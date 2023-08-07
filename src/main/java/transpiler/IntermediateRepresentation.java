@@ -84,6 +84,14 @@ public class IntermediateRepresentation
                 node.type = convertedNode.type;
             }
 
+            for (ASTNode child : node.children) {
+                if (child.type.startsWith("*")) {
+                    child.type = child.type.substring(1);
+                    child.status = null;
+                    apply(child);
+                }
+            }
+
             node.status = "SIEVED";
             return null;
         }
@@ -100,6 +108,12 @@ public class IntermediateRepresentation
     static Map<String, Map<String, ASTNode>> NODE_CONVERSIONS =
         buildConversions
         (
+         "COMMAND_OR_DEFINITION",
+         cases("$DEFINITION", n("*DEFINITION", "$DEFINITION"),
+               "$COMMAND", n("*COMMAND", "$COMMAND"),
+               "$", n("BLOCK",
+                      loop("$COMMAND_OR_DEFINITION",
+                           n("*COMMAND_OR_DEFINITION", "$")))),
          "LITERAL", cases("$QUOTATION", n("LIST", "$QUOTATION.DATUM"),
                           "$SELF_EVALUATING", n("LITERAL", "$SELF_EVALUATING")),
          "CONDITIONAL", n("CONDITIONAL",
