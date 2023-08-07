@@ -11,7 +11,7 @@ import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import transpiler.scheme.SchemeScanner;
-import transpiler.scala.ScalaBuilder;
+import transpiler.scala.ScalaUnparser;
 
 public class Transpiler {
     public static void main(String[] args) throws IOException, ParseException, Exception {
@@ -33,7 +33,7 @@ public class Transpiler {
     {
         ASTNode schemeAst = SchemeScanner.generateAST(schemeCode);
         ASTNode scalaAst = IntermediateRepresentation.generateScalaAST(schemeAst);
-        String scalaCode = ScalaBuilder.generateCode(scalaAst);
+        String scalaCode = ScalaUnparser.generateCode(scalaAst);
         return scalaCode;
     }
 }

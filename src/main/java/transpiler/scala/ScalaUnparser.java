@@ -7,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import transpiler.ASTNode;
 
-public class ScalaBuilder
+public class ScalaUnparser
 {
     public static String generateCode(ASTNode ast)
     {
