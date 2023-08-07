@@ -12,7 +12,30 @@ import java.util.Arrays;
 public class IntermediateRepresentationTest
 {
     @Test
-    public void sieveProcedureCalls()
+    public void sieve_addTypes_variableDefinition()
+    {
+        ASTNode expectedAst =
+            n("DEF_VAR",
+              n("ID", "n"),
+              n("EXPRESSION",
+                n("LITERAL",
+                  n("NUMBER", "1"))),
+              n("TYPE", "Sch"));
+        ASTNode schemeAst =
+            n("DEFINITION", "define",
+              n("IDENTIFIER", "n"),
+              n("EXPRESSION",
+                n("LITERAL",
+                  n("SELF_EVALUATING",
+                    n("NUMBER", "1")))));
+         IntermediateRepresentation ir = new IntermediateRepresentation(schemeAst);
+         ir.sieveAST();
+         ir.addTypes();
+         compareASTNodes(expectedAst, ir.ast);
+    }
+
+    @Test
+    public void sieve_addTypes_procedureCalls()
     {
         ASTNode expectedAst =
             n("EXPRESSION",
@@ -69,11 +92,12 @@ public class IntermediateRepresentationTest
 
         IntermediateRepresentation ir = new IntermediateRepresentation(schemeAst);
         ir.sieveAST();
+        ir.addTypes();
         compareASTNodes(expectedAst, ir.ast);
     }
 
     @Test
-    public void sieveProcedure_Syntax1()
+    public void sieve_addTypes_procedure_Syntax1()
     {
         ASTNode expectedAst =
             n("DEF_VAR",
@@ -105,7 +129,8 @@ public class IntermediateRepresentationTest
                               n("IDENTIFIER", "b"))),
                           n("ARGUMENT",
                             n("EXPRESSION",
-                              n("IDENTIFIER", "c"))))))))));
+                              n("IDENTIFIER", "c"))))))))),
+              n("TYPE", "Sch"));
         ASTNode schemeAst =
             n("DEFINITION", "define",
               n("IDENTIFIER", "fact"),
@@ -133,11 +158,12 @@ public class IntermediateRepresentationTest
                               n("IDENTIFIER", "c"))))))))));
          IntermediateRepresentation ir = new IntermediateRepresentation(schemeAst);
          ir.sieveAST();
+         ir.addTypes();
          compareASTNodes(expectedAst, ir.ast);
     }
 
     @Test
-    public void sieveProcedure_Syntax2()
+    public void sieve_addTypes_procedure_Syntax2()
     {
         ASTNode expectedAst =
             n("DEF_VAR",
@@ -169,7 +195,8 @@ public class IntermediateRepresentationTest
                               n("IDENTIFIER", "b"))),
                           n("ARGUMENT",
                             n("EXPRESSION",
-                              n("IDENTIFIER", "c"))))))))));
+                              n("IDENTIFIER", "c"))))))))),
+              n("TYPE", "Sch"));
         ASTNode schemeAst =
             n("DEFINITION", "define",
               n("IDENTIFIER", "fact"),
@@ -195,11 +222,12 @@ public class IntermediateRepresentationTest
                               n("IDENTIFIER", "c"))))))));
          IntermediateRepresentation ir = new IntermediateRepresentation(schemeAst);
          ir.sieveAST();
+         ir.addTypes();
          compareASTNodes(expectedAst, ir.ast);
     }
 
     @Test
-    public void sieveProcedureWithDottedVariables_Syntax1()
+    public void sieve_addTypes_procedureWithDottedVariables_Syntax1()
     {
         ASTNode expectedAst =
             n("DEF_VAR",
@@ -234,7 +262,8 @@ public class IntermediateRepresentationTest
                               n("IDENTIFIER", "b"))),
                           n("ARGUMENT",
                             n("EXPRESSION",
-                              n("IDENTIFIER", "c"))))))))));
+                              n("IDENTIFIER", "c"))))))))),
+              n("TYPE", "Sch"));
         ASTNode schemeAst =
             n("DEFINITION", "define",
               n("IDENTIFIER", "fact"),
@@ -264,11 +293,12 @@ public class IntermediateRepresentationTest
                               n("IDENTIFIER", "c"))))))))));
          IntermediateRepresentation ir = new IntermediateRepresentation(schemeAst);
          ir.sieveAST();
+         ir.addTypes();
          compareASTNodes(expectedAst, ir.ast);
     }
 
     @Test
-    public void sieveProcedureWithDottedVariables_Syntax2()
+    public void sieve_addTypes_procedureWithDottedVariables_Syntax2()
     {
         ASTNode expectedAst =
             n("DEF_VAR",
@@ -303,7 +333,8 @@ public class IntermediateRepresentationTest
                               n("IDENTIFIER", "b"))),
                           n("ARGUMENT",
                             n("EXPRESSION",
-                              n("IDENTIFIER", "c"))))))))));
+                              n("IDENTIFIER", "c"))))))))),
+              n("TYPE", "Sch"));
         ASTNode schemeAst =
             n("DEFINITION", "define",
               n("IDENTIFIER", "fact"),
@@ -331,11 +362,12 @@ public class IntermediateRepresentationTest
                               n("IDENTIFIER", "c"))))))));
          IntermediateRepresentation ir = new IntermediateRepresentation(schemeAst);
          ir.sieveAST();
+         ir.addTypes();
          compareASTNodes(expectedAst, ir.ast);
     }
 
     @Test
-    public void sieveConditionalsWithAlternate()
+    public void sieve_addTypes_conditionalsWithAlternate()
     {
         ASTNode expectedAst =
             n("EXPRESSION",
@@ -438,11 +470,12 @@ public class IntermediateRepresentationTest
                                           n("NUMBER", "1"))))))))))))))));
         IntermediateRepresentation ir = new IntermediateRepresentation(schemeAst);
         ir.sieveAST();
+        ir.addTypes();
         compareASTNodes(expectedAst, ir.ast);
     }
 
     @Test
-    public void sieveConditionalsWithoutAlternate()
+    public void sieve_addTypes_conditionalsWithoutAlternate()
     {
         ASTNode expectedAst =
             n("EXPRESSION",
@@ -490,11 +523,12 @@ public class IntermediateRepresentationTest
                 n("ALTERNATE")));
         IntermediateRepresentation ir = new IntermediateRepresentation(schemeAst);
         ir.sieveAST();
+        ir.addTypes();
         compareASTNodes(expectedAst, ir.ast);
     }
 
     @Test
-    public void sieveAssignments()
+    public void sieve_addTypes_assignments()
     {
         ASTNode expectedAst =
             n("EXPRESSION",
@@ -531,6 +565,7 @@ public class IntermediateRepresentationTest
                             n("NUMBER", "0")))))))));
         IntermediateRepresentation ir = new IntermediateRepresentation(schemeAst);
         ir.sieveAST();
+        ir.addTypes();
         compareASTNodes(expectedAst, ir.ast);
     }
 }

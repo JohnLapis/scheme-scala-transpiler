@@ -25,6 +25,24 @@ public class IntermediateRepresentation
 {
     record Conversion(Map<String, ASTNode> cases) {}
 
+
+    class TypeSchemeAST implements Function<ASTNode, Void>
+    {
+        public Void apply(ASTNode node)
+        {
+            if (nodeWasTyped(node)) return null;
+
+
+            if (TYPED_NODE_TYPES.contains(node.type)
+                && node.getByPath("$TYPE") == null) {
+                node.addChildren(new ASTNode("TYPE", "Sch"));
+            }
+
+            node.status = "TYPED";
+            return null;
+        }
+    }
+
     class ConvertSchemeAST implements Function<ASTNode, Void>
     {
         /**
@@ -72,7 +90,7 @@ public class IntermediateRepresentation
         }
     }
 
-    static List<String> NODE_STATUSES = Arrays.asList("SIEVED");
+    static List<String> NODE_STATUSES = Arrays.asList("SIEVED", "TYPED");
 
     /**
      * Each conversion consists of a key of format "<TYPE>[:<VALUE>]" and cases. A
@@ -109,11 +127,11 @@ public class IntermediateRepresentation
          "FORMALS",
          cases("$VAR_PARAMETER", n("PARAMS",
                                    loop("$IDENTIFIER",
-                                        n("PARAM", n("ID", "$"), n("TYPE", "Sch"))),
+                                        n("PARAM", n("ID", "$"))),
                                    n("PARAM", "$VAR_PARAMETER")),
                "$", n("PARAMS",
                       loop("$IDENTIFIER",
-                           n("PARAM", n("ID", "$"), n("TYPE", "Sch"))))),
+                           n("PARAM", n("ID", "$"))))),
          "VAR_PARAMETER", n("PARAM",
                             n("ID", "$IDENTIFIER"),
                             n("TYPE", "Sch*")),
@@ -121,6 +139,8 @@ public class IntermediateRepresentation
                              n("NAME", "$OPERATOR"),
                              loop("$OPERAND", n("ARGUMENT", "$")))
          );
+
+    static List<String> TYPED_NODE_TYPES = Arrays.asList("PARAM", "DEF_VAR");
 
     ASTNode ast;
     ConvertSchemeAST convertSchemeAST;
@@ -132,10 +152,16 @@ public class IntermediateRepresentation
 
     }
 
+    static boolean nodeWasTyped(ASTNode node)
+    {
+        return node.status != null
+            && NODE_STATUSES.indexOf(node.status) >= NODE_STATUSES.indexOf("TYPED");
+    }
+
     static boolean nodeWasSieved(ASTNode node)
     {
         return node.status != null
-            && NODE_STATUSES.indexOf(node.status) > NODE_STATUSES.indexOf("SIEVED");
+            && NODE_STATUSES.indexOf(node.status) >= NODE_STATUSES.indexOf("SIEVED");
     }
 
     static boolean conversionExists(String conversionName)
@@ -284,7 +310,7 @@ public class IntermediateRepresentation
 
     void addTypes()
     {
-        // where appropriate, add types to values c/ all types will be ~Sch~
+        ast.apply(new TypeSchemeAST());
     }
 
     public static ASTNode generateScalaAST(ASTNode schemeAst)
