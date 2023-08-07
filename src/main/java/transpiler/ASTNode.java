@@ -113,6 +113,11 @@ public class ASTNode
         return all;
     }
 
+    boolean hasByPath(String path)
+    {
+        return getByPath(path) != null;
+    }
+
     ASTNode getByPath(String path)
     {
         return get(splitPath(path));

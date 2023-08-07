@@ -33,8 +33,7 @@ public class IntermediateRepresentation
             if (nodeWasTyped(node)) return null;
 
 
-            if (TYPED_NODE_TYPES.contains(node.type)
-                && node.getByPath("$TYPE") == null) {
+            if (TYPED_NODE_TYPES.contains(node.type) && !node.hasByPath("$TYPE")) {
                 node.addChildren(new ASTNode("TYPE", "Sch"));
             }
 
@@ -62,7 +61,7 @@ public class IntermediateRepresentation
 
             ASTNode conversionNode = null;
             for (Map.Entry<String, ASTNode> entry : conversionCases.entrySet()) {
-                if (node.getByPath(entry.getKey()) != null) {
+                if (node.hasByPath(entry.getKey())) {
                     conversionNode = entry.getValue();
                     break;
                 }
