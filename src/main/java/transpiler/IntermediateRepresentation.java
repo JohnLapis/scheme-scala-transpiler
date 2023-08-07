@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.regex.Pattern;
 import java.util.function.Function;
 
@@ -34,11 +35,12 @@ public class IntermediateRepresentation
         {
             if (nodeWasSieved(node)) return null;
 
-            node.status = "SIEVED";
-
             Map<String, ASTNode> conversionCases = getConversions(node);
 
-            if (conversionCases == null) return null;
+            if (conversionCases == null) {
+                node.status = "SIEVED";
+                return null;
+            }
 
             ASTNode conversionNode = null;
             for (Map.Entry<String, ASTNode> entry : conversionCases.entrySet()) {
@@ -48,13 +50,24 @@ public class IntermediateRepresentation
                 }
             }
 
-            if (conversionNode == null) return null;
+            if (conversionNode == null) {
+                node.status = "SIEVED";
+                return null;
+            }
 
             ASTNode convertedNode = applyConversion(node, conversionNode);
             node.value = convertedNode.value;
-            node.type = convertedNode.type;
             node.setChildren(convertedNode.children);
 
+            // "*" indicates that the conversion should be recursed on the new node.
+            if (convertedNode.type.startsWith("*")) {
+                node.type = convertedNode.type.substring(1);
+                apply(node);
+            } else {
+                node.type = convertedNode.type;
+            }
+
+            node.status = "SIEVED";
             return null;
         }
     }
@@ -74,7 +87,7 @@ public class IntermediateRepresentation
                          n("ID", "$IDENTIFIER"),
                          n("EXPRESSION", "$EXPRESSION")),
          "LAMBDA_EXPRESSION", n("LAMBDA",
-                                n("PARAMS", "FORMALS"),
+                                n("PARAMS", "$FORMALS"),
                                 n("BODY", "$BODY")),
          "DEFINITION:define",
          cases("$EXPRESSION", n("DEF_VAR",
@@ -86,7 +99,7 @@ public class IntermediateRepresentation
                                    n("LAMBDA",
                                      n("PARAMS", "$DEF_FORMALS"),
                                      n("BODY", "$BODY"))))),
-         "DEF_FORMALS", n("FORMALS", "$"),
+         "DEF_FORMALS", n("*FORMALS", "$"),
          "FORMALS",
          cases("$VAR_PARAMETER", n("PARAMS",
                                    loop("$IDENTIFIER",
@@ -119,6 +132,13 @@ public class IntermediateRepresentation
             && NODE_STATUSES.indexOf(node.status) > NODE_STATUSES.indexOf("SIEVED");
     }
 
+    static boolean conversionExists(String conversionName)
+    {
+        String key = conversionName.startsWith("$") ?
+            conversionName.substring(1) : conversionName;
+        return NODE_CONVERSIONS.containsKey(key);
+    }
+
     static Map<String, ASTNode> getConversions(ASTNode node)
     {
         Map<String, ASTNode> conversion = NODE_CONVERSIONS.get(node.type);
@@ -146,7 +166,7 @@ public class IntermediateRepresentation
 
     static Conversion cases(Object... objs)
     {
-        Map<String, ASTNode> cases = new HashMap<>();
+        Map<String, ASTNode> cases = new LinkedHashMap<>();
         for (int i = 0; i < objs.length; i += 2) {
             if (objs[i] instanceof String prefix
                 && objs[i + 1] instanceof ASTNode conversionNode) {
@@ -177,14 +197,14 @@ public class IntermediateRepresentation
      * This method builds a nodes with the structure of conversionNode and data from
      * sourceNode.
      */
-    static ASTNode applyConversion(ASTNode sourceNode, ASTNode conversionNode)
+    ASTNode applyConversion(ASTNode sourceNode, ASTNode conversionNode)
     {
         return conversionNode.type.equals("loop") ?
             applyLoopConversion(sourceNode, conversionNode)
             : applySimpleConversion(sourceNode, conversionNode);
     }
 
-    static ASTNode applySimpleConversion(ASTNode sourceNode, ASTNode conversionNode)
+    ASTNode applySimpleConversion(ASTNode sourceNode, ASTNode conversionNode)
     {
         ASTNode node = new ASTNode();
 
@@ -202,12 +222,12 @@ public class IntermediateRepresentation
                 throw new NodePathNotMatched(conversionNode.value, sourceNode);
             }
 
+            if (conversionNode.isLeaf() && conversionExists(conversionNode.value)) {
+                foundNode.apply(convertSchemeAST);
+            }
+
             node.value = foundNode.value;
             node.setChildren(foundNode.children);
-        }
-
-        if (conversionNode.children.size() == 0) {
-            // TODO check if found node should be converted so that data is not lost
         }
 
         for (ASTNode conversionChild : conversionNode.children) {
@@ -219,11 +239,12 @@ public class IntermediateRepresentation
             }
         }
 
-        return node;
+        node.status = "SIEVED";
 
+        return node;
     }
 
-    static ASTNode applyLoopConversion(ASTNode sourceNode, ASTNode conversionNode)
+    ASTNode applyLoopConversion(ASTNode sourceNode, ASTNode conversionNode)
     {
         ASTNode node = new ASTNode();
 

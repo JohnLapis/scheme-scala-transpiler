@@ -86,6 +86,11 @@ public class ASTNode
         return node;
     }
 
+    public boolean isLeaf()
+    {
+        return children.size() == 0;
+    }
+
     List<ASTNode> getAllByPath(String path)
     {
         return getAll(splitPath(path));
