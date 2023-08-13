@@ -51,6 +51,8 @@ public class ScalaUnparser
             );
     static String DEFAULT_SEPARATOR = "";
 
+    static List<String> INFIX_FUNCTIONS = Arrays.asList("+", "*", "-", "/", "%");
+
     ASTNode ast;
     List<String> codeLines;
 
@@ -159,8 +161,32 @@ public class ScalaUnparser
         return SEPARATORS.getOrDefault(node.type, DEFAULT_SEPARATOR);
     }
 
+    static boolean hasInfixOperator(ASTNode node)
+    {
+        return INFIX_FUNCTIONS.contains(node.getByPath("$NAME.EXPRESSION.IDENTIFIER").value);
+    }
+
+    static String unparseFunctionCallWithInfixOperator(ASTNode functionCall)
+    {
+        String operatorName = functionCall.getByPath("$NAME.EXPRESSION.IDENTIFIER").value;
+        List<ASTNode> argumentNodes = functionCall.getAllByPath("$ARGUMENT");
+        List<String> arguments = new ArrayList<>();
+
+        for (ASTNode node : argumentNodes) {
+            // Parentheses need to be added to guarantee the preservation of the
+            // order of operations.
+            arguments.add("(" + stringify(node) + ")");
+        }
+
+        return String.join(" " + operatorName + " ", arguments);
+    }
+
     static List<String> fillTemplate(Template template, ASTNode node)
     {
+        if (node.type == "FUNCTION_CALL" && hasInfixOperator(node)) {
+            return Arrays.asList(unparseFunctionCallWithInfixOperator(node));
+        }
+
         System.out.println(node.type);
         List<String> filledBlocks = new ArrayList<>();
 
