@@ -289,9 +289,9 @@ public class ScalaUnparser
     {
         ScalaUnparser unparser = new ScalaUnparser(ast);
         unparser.addHelperFile();
-        unparser.codeLines.add("def main(args: Array[String]) = {");
+        unparser.codeLines.add("def main(args: Array[String]) = println({");
         unparser.generateCodeBlocks();
-        unparser.codeLines.add("}");
+        unparser.codeLines.add("})");
         return String.join("\n", unparser.codeLines);
     }
 }
