@@ -25,6 +25,25 @@ public class IntermediateRepresentation
 {
     record Conversion(Map<String, ASTNode> cases) {}
 
+    class ConvertProcedures implements Function<ASTNode, Void>
+    {
+        public Void apply(ASTNode node)
+        {
+            if (nodeWasProcedureConverted(node)) return null;
+
+            node.status = "PROCEDURE_CONVERTED";
+
+            if (!node.type.equals("FUNCTION_CALL")) return null;
+
+            ASTNode functionId = node.getByPath("$NAME.EXPRESSION.IDENTIFIER");
+
+            if (STANDARD_SCHEME_PROCEDURES.containsKey(functionId.value)) {
+                functionId.value = STANDARD_SCHEME_PROCEDURES.get(functionId.value);
+            }
+
+            return null;
+        }
+    }
 
     class TypeSchemeAST implements Function<ASTNode, Void>
     {
@@ -97,7 +116,8 @@ public class IntermediateRepresentation
         }
     }
 
-    static List<String> NODE_STATUSES = Arrays.asList("SIEVED", "TYPED");
+    static List<String> NODE_STATUSES =
+        Arrays.asList("SIEVED", "TYPED", "PROCEDURE_CONVERTED");
 
     /**
      * Each conversion consists of a key of format "<TYPE>[:<VALUE>]" and cases. A
@@ -155,6 +175,11 @@ public class IntermediateRepresentation
 
     static List<String> TYPED_NODE_TYPES = Arrays.asList("PARAM", "DEF_VAR");
 
+    static Map<String, String> STANDARD_SCHEME_PROCEDURES =
+        Map.of(
+               "=", "numsEq"
+               );
+
     ASTNode ast;
     ConvertSchemeAST convertSchemeAST;
 
@@ -163,6 +188,12 @@ public class IntermediateRepresentation
         this.ast = ast;
         this.convertSchemeAST = new ConvertSchemeAST();
 
+    }
+
+    static boolean nodeWasProcedureConverted(ASTNode node)
+    {
+        return node.status != null
+            && NODE_STATUSES.indexOf(node.status) >= NODE_STATUSES.indexOf("PROCEDURE_CONVERTED");
     }
 
     static boolean nodeWasTyped(ASTNode node)
@@ -326,11 +357,17 @@ public class IntermediateRepresentation
         ast.apply(new TypeSchemeAST());
     }
 
+    void convertProcedures()
+    {
+        ast.apply(new ConvertProcedures());
+    }
+
     public static ASTNode generateScalaAST(ASTNode schemeAst)
     {
         IntermediateRepresentation ir = new IntermediateRepresentation(schemeAst);
         ir.sieveAST();
         ir.addTypes();
+        ir.convertProcedures();
         return ir.ast;
     }
 }

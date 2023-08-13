@@ -35,6 +35,7 @@ public class ScalaUnparser
             "CONDITIONAL", cases("$ALTERNATE", "if (<TEST>) {<SEQUENCE>} else {<ALTERNATE>}",
                                  "$", "if (<TEST>) {<SEQUENCE>}"),
             "FUNCTION_CALL", "<NAME>(<loop:ARGUMENT>)",
+            "METHOD_CALL", "<OBJECT>.<NAME>(<loop:ARGUMENT>)",
             "ASSIGNMENT", "<ID> = <EXPRESSION>",
             "DEF_VAR", "var <ID>: <TYPE> = <EXPRESSION>",
             "LAMBDA", "<PARAMS> => <BODY>",
@@ -51,7 +52,7 @@ public class ScalaUnparser
             );
     static String DEFAULT_SEPARATOR = "";
 
-    static List<String> INFIX_FUNCTIONS = Arrays.asList("+", "*", "-", "/", "%");
+    static List<String> INFIX_FUNCTIONS = Arrays.asList("+", "*", "-", "/");
 
     ASTNode ast;
     List<String> codeLines;
@@ -181,10 +182,23 @@ public class ScalaUnparser
         return String.join(" " + operatorName + " ", arguments);
     }
 
+    static boolean isSpecialFunction(ASTNode node)
+    {
+        return node.type.equals("FUNCTION_CALL") && hasInfixOperator(node);
+    }
+
+    static String handleSpecialFunction(ASTNode node)
+    {
+        if (hasInfixOperator(node)) {
+            return unparseFunctionCallWithInfixOperator(node);
+        }
+        throw new RuntimeException("wtf");
+    }
+
     static List<String> fillTemplate(Template template, ASTNode node)
     {
-        if (node.type == "FUNCTION_CALL" && hasInfixOperator(node)) {
-            return Arrays.asList(unparseFunctionCallWithInfixOperator(node));
+        if (isSpecialFunction(node)) {
+            return Arrays.asList(handleSpecialFunction(node));
         }
 
         System.out.println(node.type);
@@ -208,10 +222,17 @@ public class ScalaUnparser
                 List<String> segments = new ArrayList<>();
                 List<ASTNode> foundNodes = block.string.equals("*") ?
                     node.children : node.getAllByPath("$" + block.string);
+
+                // If the node makes no distinction between its children (i.e., uses
+                // "*"), then the separator should be determined by the parent and
+                // not the children.
+                String separator = block.string.equals("*") ?
+                    getSeparator(node) : getSeparator(foundNodes);
+
                 for (ASTNode _node : foundNodes) {
                     segments.add(stringify(_node));
                 }
-                filledBlock = String.join(getSeparator(foundNodes), segments);
+                filledBlock = String.join(separator, segments);
                 break;
             }
 
@@ -256,12 +277,18 @@ public class ScalaUnparser
     void generateCodeBlocks()
     {
         System.out.println(ast);
-        codeLines = generateCodeBlocks(ast);
+        codeLines.addAll(generateCodeBlocks(ast));
+    }
+
+    void addHelperFile()
+    {
+        codeLines.add("import SchemeHelpers.*\n");
     }
 
     public static String generateCode(ASTNode ast)
     {
         ScalaUnparser unparser = new ScalaUnparser(ast);
+        unparser.addHelperFile();
         unparser.generateCodeBlocks();
         return String.join("\n", unparser.codeLines);
     }
