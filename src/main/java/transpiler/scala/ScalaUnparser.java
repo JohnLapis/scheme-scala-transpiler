@@ -43,12 +43,13 @@ public class ScalaUnparser
 
     // The values of this map serve as separators for metavariables if they are
     // looped.
-    static  Map<String, String> SEPARATORS =
+    static Map<String, String> SEPARATORS =
         Map.of(
                "PROGRAM", "\n",
                "PARAMS", ", ",
                "ARGUMENT", ", "
             );
+    static String DEFAULT_SEPARATOR = "";
 
     ASTNode ast;
     List<String> codeLines;
@@ -155,7 +156,7 @@ public class ScalaUnparser
 
     static String getSeparator(ASTNode node)
     {
-        return SEPARATORS.getOrDefault(node.type, "");
+        return SEPARATORS.getOrDefault(node.type, DEFAULT_SEPARATOR);
     }
 
     static List<String> fillTemplate(Template template, ASTNode node)
