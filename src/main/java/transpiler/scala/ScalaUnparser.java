@@ -26,7 +26,6 @@ public class ScalaUnparser
     static Map<String, Cases> TEMPLATES =
         buildTemplates(
             "PROGRAM", "<loop:*>",
-            "EXPRESSION", cases("$LITERAL", "<LITERAL>"),
             "LITERAL", cases("$BOOLEAN", "<BOOLEAN>",
                              "$NUMBER", "<NUMBER>",
                              "$VECTOR", "<VECTOR>",
@@ -35,6 +34,7 @@ public class ScalaUnparser
                              "$BYTEVECTOR", "<BYTEVECTOR>"),
             "CONDITIONAL", cases("$ALTERNATE", "if (<TEST>) {<SEQUENCE>} else {<ALTERNATE>}",
                                  "$", "if (<TEST>) {<SEQUENCE>}"),
+            "FUNCTION_CALL", "<NAME>(<loop:ARGUMENT>)",
             "ASSIGNMENT", "<ID> = <EXPRESSION>",
             "DEF_VAR", "var <ID>: <TYPE> = <EXPRESSION>",
             "LAMBDA", "<PARAMS> => <BODY>",
@@ -46,7 +46,8 @@ public class ScalaUnparser
     static  Map<String, String> SEPARATORS =
         Map.of(
                "PROGRAM", "\n",
-               "PARAMS", ", "
+               "PARAMS", ", ",
+               "ARGUMENT", ", "
             );
 
     ASTNode ast;
@@ -147,6 +148,11 @@ public class ScalaUnparser
         return block.substring(1, block.length() - 1);
     }
 
+    static String getSeparator(List<ASTNode> nodes)
+    {
+        return getSeparator(nodes.isEmpty() ? null : nodes.get(0));
+    }
+
     static String getSeparator(ASTNode node)
     {
         return SEPARATORS.getOrDefault(node.type, "");
@@ -178,7 +184,7 @@ public class ScalaUnparser
                 for (ASTNode _node : foundNodes) {
                     segments.add(stringify(_node));
                 }
-                filledBlock = String.join("", segments);
+                filledBlock = String.join(getSeparator(foundNodes), segments);
                 break;
             }
 
@@ -191,10 +197,14 @@ public class ScalaUnparser
     static String stringify(ASTNode node)
     {
         List<String> blocks = generateCodeBlocks(node);
-        if (blocks == null) {
-            return  node.value == null ? "" : node.value;
+        if (blocks != null) {
+            return String.join(getSeparator(node), blocks);
         }
-        return  String.join(getSeparator(node), blocks);
+
+        // If a node has no value, then its children possess the semantics. If it has
+        // no templates (since `blocks == null`), then it means it's a simple node
+        // and has a single child.
+        return node.value == null ? stringify(node.children.get(0)) : node.value;
     }
 
     static List<String> generateCodeBlocks(ASTNode node)
