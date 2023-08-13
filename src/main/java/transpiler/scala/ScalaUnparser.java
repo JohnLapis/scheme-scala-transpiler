@@ -103,8 +103,10 @@ public class ScalaUnparser
         Matcher matcher = Pattern.compile("<[^>]+>").matcher(string);
         int lastIndex = 0;
 
+        System.out.println(string);
         while (matcher.find()) {
             String startRawString = string.substring(lastIndex, matcher.start());
+            System.out.println("start: " + startRawString);
             if (!startRawString.isEmpty()) {
                 blocks.add(new Block(startRawString, BlockType.RAW));
             }
@@ -123,15 +125,19 @@ public class ScalaUnparser
                 type = BlockType.METAVARIABLE;
             }
 
+            System.out.println("meta: " + metavariable);
+
             blocks.add(new Block(metavariable, type));
 
             lastIndex = matcher.end();
         }
 
         String endRawString = string.substring(lastIndex, string.length());
+        System.out.println("end: " + endRawString);
         if (!endRawString.isEmpty()) {
             blocks.add(new Block(endRawString, BlockType.RAW));
         }
+        System.out.println("==========================================");
 
         return new Template(blocks);
     }
@@ -148,9 +154,11 @@ public class ScalaUnparser
 
     static List<String> fillTemplate(Template template, ASTNode node)
     {
+        System.out.println(node.type);
         List<String> filledBlocks = new ArrayList<>();
 
         for (Block block : template.blocks) {
+            System.out.println(block);
             String filledBlock = "";
 
             switch (block.type) {
@@ -159,6 +167,7 @@ public class ScalaUnparser
                 break;
             case METAVARIABLE:
                 ASTNode foundNode = node.getByPath("$" + block.string);
+                System.out.println(foundNode);
                 filledBlock = foundNode == null ?
                     "" : stringify(foundNode);
                 break;
@@ -209,6 +218,7 @@ public class ScalaUnparser
 
     void generateCodeBlocks()
     {
+        System.out.println(ast);
         codeLines = generateCodeBlocks(ast);
     }
 
