@@ -274,7 +274,7 @@ public class ScalaUnparser
         return fillTemplate(template, node);
     }
 
-    void generateCodeBlocks()
+    void generateCodeLines()
     {
         System.out.println(ast);
         codeLines.addAll(generateCodeBlocks(ast));
@@ -291,7 +291,7 @@ public class ScalaUnparser
         ScalaUnparser unparser = new ScalaUnparser(ast);
         unparser.addHelperFile();
         unparser.codeLines.add("def main(args: Array[String]) = println({");
-        unparser.generateCodeBlocks();
+        unparser.generateCodeLines();
         unparser.codeLines.add("})");
         return String.join("\n", unparser.codeLines);
     }
