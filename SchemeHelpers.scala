@@ -1,4 +1,16 @@
+import scala.language.implicitConversions
+
 package object SchemeHelpers {
+  // This is the type of all Scheme variables. That's necessary to implement its
+  // dynamic typing.
+  type Sch = Int | Number | Boolean
+
+  given Conversion[Sch, Number] = _.asInstanceOf
+  given Conversion[Sch, Int] = _.asInstanceOf
+  given Conversion[Sch, Boolean] = (x: Sch) => x match
+    case x: Boolean if x == false => false
+    case _ => true
+
   def numsEq(nums: Number*): Boolean = compareNumbers(nums, _ == _)
   // def numsLt(nums: Number*): Boolean = compareNumbers(nums, _ < _)
   // def numsLe(nums: Number*): Boolean = compareNumbers(nums, _ <= _)

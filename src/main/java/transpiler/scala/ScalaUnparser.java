@@ -282,7 +282,8 @@ public class ScalaUnparser
 
     void addHelperFile()
     {
-        codeLines.add("import SchemeHelpers.*\n");
+        codeLines.add("import scala.language.implicitConversions");
+        codeLines.add("import SchemeHelpers.{given, *}\n");
     }
 
     public static String generateCode(ASTNode ast)
