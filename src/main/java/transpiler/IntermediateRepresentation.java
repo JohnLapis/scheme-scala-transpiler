@@ -177,7 +177,17 @@ public class IntermediateRepresentation
 
     static Map<String, String> STANDARD_SCHEME_PROCEDURES =
         Map.of(
-               "=", "numsEq"
+               // Equivalence predicate
+               "eqv?", "isEqv",
+               "eq?", "isEq",
+               "equal?", "isEqual",
+
+               // Numbers
+               "=", "numsEq",
+
+               // Booleans
+               "not", "!",
+               "boolean?", "isBoolean"
                );
 
     ASTNode ast;
