@@ -1,18 +1,24 @@
 import scala.language.implicitConversions
 
 package object SchemeHelpers {
-  // This is the type of all Scheme variables. That's necessary to implement its
-  // dynamic typing.
-  type Sch = Int | Number | Boolean
-  type ExactNum = Number
+  type Real = Double
+  type SchNumber = Complex | Polar | Real | Rational | Int
+  // type Sch = (SchNumber | Boolean | Char | Null | Pair | Procedure | Symbol
+  //               | Bytevector | EofObject | Port | String | Vector)
+  type Sch = SchNumber | Boolean
 
-  given Conversion[Sch, Number] = _.asInstanceOf
-  given Conversion[Sch, Int] = _.asInstanceOf
+  given Conversion[SchNumber, Int] = _.asInstanceOf
+  given Conversion[SchNumber, Rational] = _.asInstanceOf
+  given Conversion[SchNumber, Real] = _.asInstanceOf
+  given Conversion[SchNumber, Polar] = _.asInstanceOf
+  given Conversion[SchNumber, Complex] = _.asInstanceOf
+  given Conversion[Sch, SchNumber] = _.asInstanceOf
   given Conversion[Sch, Boolean] = (x: Sch) => x match
     case x: Boolean if x == false => false
     case _ => true
 
-  val predicates = List(isBoolean, isChar, isNull, isPair, isProcedure, isSymbol, isBytevector, isEofObject, isNumber, isPort, isString, isVector)
+  // val predicates = List(isBoolean, isChar, isNull, isPair, isProcedure, isSymbol, isBytevector, isEofObject, isNumber, isPort, isString, isVector)
+  val predicates = List(isBoolean, isNumber)
 
   def typesAreEqual(obj1: Sch, obj2: Sch): Boolean =
     (for predicate <- predicates
@@ -25,7 +31,6 @@ package object SchemeHelpers {
   def isSymbol(obj: Sch): Boolean = ???
   def isBytevector(obj: Sch): Boolean = ???
   def isEofObject(obj: Sch): Boolean = ???
-  def isNumber(obj: Sch): Boolean = ???
   def isPort(obj: Sch): Boolean = ???
   def isString(obj: Sch): Boolean = ???
   def isVector(obj: Sch): Boolean = ???
@@ -62,6 +67,25 @@ package object SchemeHelpers {
       }
 
   // Section: Numbers
+
+  def isInteger(obj: Sch): Boolean = obj match {
+    case obj: Int => true
+    case _ => false
+  }
+  def isRational(obj: Sch): Boolean = obj match {
+    case (_, denominator): Rational => denominator != 0
+    case _ => isInteger(obj)
+  }
+  def isReal(obj: Sch): Boolean = obj match {
+    case (_, complexPart): Complex => complexPart == 0
+    case obj: Real => true
+    case _ => isRational(obj)
+  }
+  def isComplex(obj: Sch): Boolean = obj match {
+    case obj: Complex => true
+    case _ => isReal(obj)
+  }
+  def isNumber(obj: Sch): Boolean = isComplex(obj)
 
   def numsEq(nums: Number*): Boolean = compareNumbers(nums, _ == _)
   // def numsLt(nums: Number*): Boolean = compareNumbers(nums, _ < _)

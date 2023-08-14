@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import java.util.function.Function;
 
 class NodePathNotMatched extends RuntimeException
@@ -24,6 +25,23 @@ class NodePathNotMatched extends RuntimeException
 public class IntermediateRepresentation
 {
     record Conversion(Map<String, ASTNode> cases) {}
+
+    class ConvertLiterals implements Function<ASTNode, Void>
+    {
+        public Void apply(ASTNode node) {
+            if (nodeWasLiteralConverted(node)) return null;
+
+            node.status = "LITERAL_CONVERTED";
+
+            if (node.type.equals("BOOLEAN")) {
+                convertBooleanLiteral(node);
+            } else if (node.type.equals("NUMBER")) {
+                convertNumberLiteral(node);
+            }
+
+            return null;
+        }
+    }
 
     class ConvertProcedures implements Function<ASTNode, Void>
     {
@@ -117,7 +135,7 @@ public class IntermediateRepresentation
     }
 
     static List<String> NODE_STATUSES =
-        Arrays.asList("SIEVED", "TYPED", "PROCEDURE_CONVERTED");
+        Arrays.asList("SIEVED", "TYPED", "PROCEDURE_CONVERTED", "LITERAL_CONVERTED");
 
     /**
      * Each conversion consists of a key of format "<TYPE>[:<VALUE>]" and cases. A
@@ -198,6 +216,12 @@ public class IntermediateRepresentation
         this.ast = ast;
         this.convertSchemeAST = new ConvertSchemeAST();
 
+    }
+
+    static boolean nodeWasLiteralConverted(ASTNode node)
+    {
+        return node.status != null
+                && NODE_STATUSES.indexOf(node.status) >= NODE_STATUSES.indexOf("LITERAL_CONVERTED");
     }
 
     static boolean nodeWasProcedureConverted(ASTNode node)
@@ -350,6 +374,100 @@ public class IntermediateRepresentation
         return node;
     }
 
+    static void convertBooleanLiteral(ASTNode node)
+    {
+        if (node.value.equals("#t") || node.value.equals("#true")) {
+            node.value = "true";
+        } else if (node.value.equals("#f") || node.value.equals("#false")) {
+            node.value = "false";
+        }
+    }
+
+    static String changeIntegerBase(String value, int radix)
+    {
+        List<Character> digits = Arrays.asList('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f');
+
+        // Double number = (Double) 0;
+        int number = 0;
+
+        for (int i = 0; i < value.length(); i++) {
+            number += digits.indexOf(value.charAt(i)) * Math.pow(radix, i);
+        }
+
+        return ((Integer) number).toString();
+    }
+
+    static String convertIntegerLiteral(String value)
+    {
+        int radix;
+        if (value.contains("#b")) {
+            radix = 2;
+        } else if (value.contains("#x")) {
+            radix = 6;
+        } else if (value.contains("#o")) {
+            radix = 8;
+        } else {
+            radix = 10;
+        }
+        return radix == 10 ? value : changeIntegerBase(value, radix);
+    }
+
+    static String convertRealLiteral(String value)
+    {
+        if (value.contains("/")) {
+            String[] numbers = value.split("/");
+            value =
+                !numbers[1].equals("0") ?
+                "Rational("
+                + convertIntegerLiteral(numbers[0])
+                + ", "
+                + convertIntegerLiteral(numbers[1])
+                + ")"
+                : (numbers[0].contains("-") ?
+                   "Dobule.NegativeInfinity" : "Dobule.PositiveInfinity");
+        } else if (value.equals("+inf.0")) {
+            value = "Double.PositiveInfinity";
+        } else if (value.equals("-inf.0")) {
+            value = "Double.NegativeInfinity";
+        } else if (value.contains("nan.0")) {
+            value = "Double.NaN";
+        }
+        return value;
+    }
+
+    static String convertNumberLiteral(String value)
+    {
+        value = value.replace("#i", "").replace("#e", "").replace("#d", "");
+
+        if (value.contains("@")) {
+            String[] numbers = value.split("@");
+            value =
+                "Polar("
+                + convertRealLiteral(numbers[0])
+                + ", "
+                + convertRealLiteral(numbers[1])
+                + ")";
+        } else if (value.contains("i")) {
+            Matcher matcher = Pattern.compile("(.*?)([\\+-][^\\+-]*i)$").matcher(value);
+            value =
+                "Complex("
+                + convertRealLiteral(matcher.group(0).length() == 0 ?
+                                     "0" : matcher.group(0))
+                + ", "
+                + convertRealLiteral(matcher.group(1))
+                + ")";
+        } else {
+            value = "Complex(" + convertRealLiteral(value) + ", 0)";
+        }
+
+        return value;
+    }
+
+    static void convertNumberLiteral(ASTNode node)
+    {
+        node.value = convertNumberLiteral(node.value);
+    }
+
     static Boolean patternMatches(String pattern, String string) {
         return Pattern
                 .compile("^" + pattern)
@@ -372,12 +490,18 @@ public class IntermediateRepresentation
         ast.apply(new ConvertProcedures());
     }
 
+    void convertLiterals()
+    {
+        ast.apply(new ConvertLiterals());
+    }
+
     public static ASTNode generateScalaAST(ASTNode schemeAst)
     {
         IntermediateRepresentation ir = new IntermediateRepresentation(schemeAst);
         ir.sieveAST();
         ir.addTypes();
         ir.convertProcedures();
+        ir.convertLiterals();
         return ir.ast;
     }
 }
