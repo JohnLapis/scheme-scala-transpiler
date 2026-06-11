@@ -1,0 +1,41 @@
+java.util.NoSuchElementException: head of empty String
+occurred in the presentation compiler.
+
+action parameters:
+uri: file://<WORKSPACE>/output.scala
+text:
+import scala.language.implicitConversions
+import SchemeHelpers.{given, *}
+
+def main(args: Array[String]) = println({
+isEqv(true, true)
+})
+
+
+
+error stacktrace:
+scala.collection.StringOps$.head$extension(StringOps.scala:1129)
+	dotty.tools.dotc.semanticdb.Scala3$StringOps$.isJavaIdent(Scala3.scala:419)
+	dotty.tools.dotc.semanticdb.SemanticSymbolBuilder.addName(SemanticSymbolBuilder.scala:63)
+	dotty.tools.dotc.semanticdb.SemanticSymbolBuilder.addDescriptor$1(SemanticSymbolBuilder.scala:109)
+	dotty.tools.dotc.semanticdb.SemanticSymbolBuilder.addSymName(SemanticSymbolBuilder.scala:146)
+	dotty.tools.dotc.semanticdb.SemanticSymbolBuilder.symbolName(SemanticSymbolBuilder.scala:29)
+	dotty.tools.dotc.semanticdb.Scala3$SymbolOps$.symbolName(Scala3.scala:266)
+	dotty.tools.dotc.semanticdb.ExtractSemanticDB$Extractor.registerUse(ExtractSemanticDB.scala:346)
+	dotty.tools.dotc.semanticdb.ExtractSemanticDB$Extractor.registerUseGuarded(ExtractSemanticDB.scala:343)
+	dotty.tools.dotc.semanticdb.ExtractSemanticDB$Extractor.traverse$$anonfun$15$$anonfun$1(ExtractSemanticDB.scala:250)
+	scala.runtime.function.JProcedure1.apply(JProcedure1.java:15)
+	scala.runtime.function.JProcedure1.apply(JProcedure1.java:10)
+	scala.collection.immutable.List.foreach(List.scala:333)
+	dotty.tools.dotc.semanticdb.ExtractSemanticDB$Extractor.traverse$$anonfun$15(ExtractSemanticDB.scala:256)
+	scala.runtime.function.JProcedure1.apply(JProcedure1.java:15)
+	scala.runtime.function.JProcedure1.apply(JProcedure1.java:10)
+	scala.collection.immutable.List.foreach(List.scala:333)
+	dotty.tools.dotc.semanticdb.ExtractSemanticDB$Extractor.traverse(ExtractSemanticDB.scala:256)
+	dotty.tools.dotc.semanticdb.ExtractSemanticDB$Extractor.traverse$$anonfun$1(ExtractSemanticDB.scala:140)
+	scala.runtime.function.JProcedure1.apply(JProcedure1.java:15)
+	scala.runtime.function.JProcedure1.apply(JProcedure1.java:10)
+	scala.collection.immutable.List.foreach(List.scala:333)
+	dotty.tools.dotc.semanticdb.ExtractSemanticDB$Extractor.traverse(ExtractSemanticDB.scala:140)
+	scala.meta.internal.pc.SemanticdbTextDocumentProvider.textDocument(SemanticdbTextDocumentProvider.scala:38)
+	scala.meta.internal.pc.ScalaPresentationCompiler.semanticdbTextDocument$$anonfun$1(ScalaPresentationCompiler.scala:174)

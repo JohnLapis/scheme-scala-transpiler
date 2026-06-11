@@ -1,0 +1,13 @@
+id: file://<WORKSPACE>/SchemeHelpers.scala:[30..31) in Input.VirtualFile("file://<WORKSPACE>/SchemeHelpers.scala", "package SchemeHelpers
+
+object {
+  def numEqual(nums: Seq[Number]): Boolean =
+  if nums.length <= 1 then
+    true
+  else
+    nums(0) == nums(1) && numEqual(nums.drop(1))
+}
+")
+file://<WORKSPACE>/SchemeHelpers.scala:3: error: expected identifier; obtained lbrace
+object {
+       ^

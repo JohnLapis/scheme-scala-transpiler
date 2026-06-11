@@ -1,0 +1,251 @@
+java.util.NoSuchElementException: head of empty list
+occurred in the presentation compiler.
+
+action parameters:
+offset: 136
+uri: file://<WORKSPACE>/SchemeHelpers.scala
+text:
+import scala.language.implicitConversions
+
+package object SchemeHelpers {
+  case Rational(numerator: Int, denominator: Int)
+  case Polar@@(radius: Real, angle: Real)
+
+  case Complex(realPart: Real, complexPart: Real)
+
+  extension ()
+
+  type Real = Double // This includes infinities and NaN.
+  type SchNumber = Complex | Polar | Real | Rational | Int
+  // type Sch = (SchNumber | Boolean | Char | Null | Pair | Procedure | Symbol
+  //               | Bytevector | EofObject | Port | String | Vector)
+  type Sch = SchNumber | Boolean | Null
+
+  given Conversion[SchNumber, Int] = _.asInstanceOf
+  given Conversion[SchNumber, Rational] = _.asInstanceOf
+  given Conversion[SchNumber, Real] = _.asInstanceOf
+  given Conversion[SchNumber, Polar] = _.asInstanceOf
+  given Conversion[SchNumber, Complex] = _.asInstanceOf
+  given Conversion[Sch, SchNumber] = _.asInstanceOf
+  given Conversion[Sch, Boolean] = (x: Sch) => x match
+    case x: Boolean if x == false => false
+    case _ => true
+  given Conversion[Sch, Null] = _.asInstanceOf
+
+  // val predicates = List(isBoolean, isChar, isNull, isPair, isProcedure, isSymbol, isBytevector, isEofObject, isNumber, isPort, isString, isVector)
+  val predicates = List(isBoolean, isNumber)
+
+  def typesAreEqual(obj1: Sch, obj2: Sch): Boolean =
+    (for predicate <- predicates
+     yield predicate(obj1) && predicate(obj2)).reduce(_ || _)
+
+  def isChar(obj: Sch): Boolean = ???
+  def isNull(obj: Sch): Boolean = obj match {
+    case obj: Null => true
+    case _ => false
+  }
+  def isPair(obj: Sch): Boolean = ???
+  def isProcedure(obj: Sch): Boolean = ???
+  def isSymbol(obj: Sch): Boolean = ???
+  def isBytevector(obj: Sch): Boolean = ???
+  def isEofObject(obj: Sch): Boolean = ???
+  def isPort(obj: Sch): Boolean = ???
+  def isString(obj: Sch): Boolean = ???
+  def isVector(obj: Sch): Boolean = ???
+
+  // Section: Equivalence predicates
+
+  def isEqv(obj1: Sch, obj2: Sch): Boolean = (obj1, obj2) match {
+    case (obj1: Boolean, obj2: Boolean) => obj1 == obj2
+    // TODO case (obj1: Symbol, obj2: Boolean) => symbolEq(obj1, obj2)
+    // TODO case (obj1: ExactNum, obj2: ExactNum) => numsEq(obj1, obj2)
+    // TODO case (obj1: InexactNum, obj2: InexactNum) => numsEq(obj1, obj2)
+    // TODO case (obj1: Char, obj2: Char) => charEq(obj1, obj2)
+    // TODO case pairs, vectors, bytevectors, records, strings
+    // TODO case procedures
+    // TODO case (obj1: Any, obj2: Any) if !typesAreEqual(obj1, obj2) => false
+    // case (_, _) => unspecified
+  }
+
+  def isEq(obj1: Sch, obj2: Sch): Boolean =
+    if ! isEqv(obj1, obj2) then
+      false
+    else
+      ???
+
+  def isEqual(obj1: Sch, obj2: Sch): Boolean =
+    if !typesAreEqual(obj1, obj2) then
+      false
+    else
+      obj1 match {
+        // TODO case obj1: Pair | Vector | String | Bytevector => ??? //recurse
+        case obj1: List[Any] if obj1.isEmpty => isEqv(obj1, obj2)
+        // TODO case obj1: Boolean | Symbol | Number | Char | Port | Procedure => isEqv(obj1, obj2)
+        case _ => isEqv(obj1, obj2)
+      }
+
+  // Section: Numbers
+
+  def isInteger(obj: Sch): Boolean = obj match {
+    case obj: Int => true
+    case _ => false
+  }
+  def isRational(obj: Sch): Boolean = obj match {
+    case (_, denominator): Rational => denominator != 0
+    case _ => isInteger(obj)
+  }
+  def isReal(obj: Sch): Boolean = obj match {
+    case (_, complexPart): Complex => complexPart == 0
+    case obj: Real => true
+    case _ => isRational(obj)
+  }
+  def isComplex(obj: Sch): Boolean = obj match {
+    case obj: Complex => true
+    case _ => isReal(obj)
+  }
+  def isNumber(obj: Sch): Boolean = isComplex(obj)
+
+  def numsEq(nums: Number*): Boolean = compareNumbers(nums, _ == _)
+  // def numsLt(nums: Number*): Boolean = compareNumbers(nums, _ < _)
+  // def numsLe(nums: Number*): Boolean = compareNumbers(nums, _ <= _)
+  // def numsGt(nums: Number*): Boolean = compareNumbers(nums, _ > _)
+  // def numsGe(nums: Number*): Boolean = compareNumbers(nums, _ >= _)
+  private def compareNumbers(
+    nums: Seq[Number],
+    operator: (Number, Number) => Boolean
+  ): Boolean =
+    if nums.length <= 1 then
+      true
+    else
+      operator(nums(0), nums(1)) && compareNumbers(nums.drop(1), operator)
+
+  // Section: Booleans
+
+  def isBoolean(obj: Sch): Boolean = obj match {
+    case obj: Boolean => true
+    case _ => false
+  }
+
+  def isBoolean(objs: Sch*): Boolean =
+    objs.map(isBoolean).reduce(_ && _)
+      && objs.reduce(_ && _) == true // All objs are true
+ objs.reduce(_ || _) == false // All objs are false
+}
+
+
+
+error stacktrace:
+scala.collection.immutable.Nil$.head(List.scala:662)
+	scala.collection.immutable.Nil$.head(List.scala:661)
+	dotty.tools.dotc.core.TypeOps$.intersect$1(TypeOps.scala:214)
+	dotty.tools.dotc.core.TypeOps$.$anonfun$3(TypeOps.scala:348)
+	dotty.tools.dotc.core.Types$Type.mapReduceOr(Types.scala:479)
+	dotty.tools.dotc.core.Types$Type.mapReduceOr(Types.scala:479)
+	dotty.tools.dotc.core.Types$Type.mapReduceOr(Types.scala:479)
+	dotty.tools.dotc.core.Types$Type.mapReduceOr(Types.scala:479)
+	dotty.tools.dotc.core.TypeOps$.approximateOr$1(TypeOps.scala:348)
+	dotty.tools.dotc.core.TypeOps$.orDominator(TypeOps.scala:362)
+	dotty.tools.dotc.core.Types$OrType.join(Types.scala:3287)
+	dotty.tools.dotc.core.Types$Type.goOr$1(Types.scala:863)
+	dotty.tools.dotc.core.Types$Type.go$1(Types.scala:722)
+	dotty.tools.dotc.core.Types$Type.findMember(Types.scala:879)
+	dotty.tools.dotc.core.Types$Type.memberBasedOnFlags(Types.scala:669)
+	dotty.tools.dotc.core.Types$Type.member(Types.scala:653)
+	dotty.tools.dotc.typer.ProtoTypes$SelectionProto.liftedTree1$1(ProtoTypes.scala:195)
+	dotty.tools.dotc.typer.ProtoTypes$SelectionProto.isMatchedBy(ProtoTypes.scala:217)
+	dotty.tools.dotc.core.TypeComparer.isMatchedByProto(TypeComparer.scala:1917)
+	dotty.tools.dotc.core.TypeComparer.firstTry$1(TypeComparer.scala:314)
+	dotty.tools.dotc.core.TypeComparer.recur(TypeComparer.scala:1336)
+	dotty.tools.dotc.core.TypeComparer.isSubType(TypeComparer.scala:194)
+	dotty.tools.dotc.core.TypeComparer.isSubType(TypeComparer.scala:204)
+	dotty.tools.dotc.core.TypeComparer.topLevelSubType(TypeComparer.scala:128)
+	dotty.tools.dotc.core.TypeComparer.testSubType(TypeComparer.scala:144)
+	dotty.tools.dotc.core.TypeComparer$.testSubType(TypeComparer.scala:2767)
+	dotty.tools.dotc.typer.Typer.adaptNoArgsOther$1(Typer.scala:3725)
+	dotty.tools.dotc.typer.Typer.adaptNoArgs$1(Typer.scala:3822)
+	dotty.tools.dotc.typer.Typer.adapt1(Typer.scala:4038)
+	dotty.tools.dotc.typer.Typer.adapt(Typer.scala:3368)
+	dotty.tools.dotc.typer.Typer.typed(Typer.scala:2987)
+	dotty.tools.dotc.typer.Typer.typed(Typer.scala:2991)
+	dotty.tools.dotc.typer.Typer.typedExpr(Typer.scala:3107)
+	dotty.tools.dotc.typer.Typer.typeSelectOnTerm$1(Typer.scala:646)
+	dotty.tools.dotc.typer.Typer.typedSelect(Typer.scala:684)
+	dotty.tools.dotc.typer.Typer.typedNamed$1(Typer.scala:2828)
+	dotty.tools.dotc.typer.Typer.typedUnadapted(Typer.scala:2921)
+	dotty.tools.dotc.typer.Typer.typed(Typer.scala:2987)
+	dotty.tools.dotc.typer.Typer.typed(Typer.scala:2991)
+	dotty.tools.dotc.typer.Typer.typedExpr(Typer.scala:3107)
+	dotty.tools.dotc.typer.Typer.$anonfun$48(Typer.scala:2295)
+	dotty.tools.dotc.typer.PrepareInlineable$.dropInlineIfError(PrepareInlineable.scala:248)
+	dotty.tools.dotc.typer.Typer.typedDefDef(Typer.scala:2295)
+	dotty.tools.dotc.typer.Typer.typedNamed$1(Typer.scala:2835)
+	dotty.tools.dotc.typer.Typer.typedUnadapted(Typer.scala:2921)
+	dotty.tools.dotc.typer.Typer.typed(Typer.scala:2987)
+	dotty.tools.dotc.typer.Typer.typed(Typer.scala:2991)
+	dotty.tools.dotc.typer.Typer.traverse$1(Typer.scala:3013)
+	dotty.tools.dotc.typer.Typer.typedStats(Typer.scala:3063)
+	dotty.tools.dotc.typer.Typer.typedBlockStats(Typer.scala:1056)
+	dotty.tools.dotc.typer.Typer.typedBlock(Typer.scala:1060)
+	dotty.tools.dotc.typer.Typer.typedUnnamed$1(Typer.scala:2867)
+	dotty.tools.dotc.typer.Typer.typedUnadapted(Typer.scala:2922)
+	dotty.tools.dotc.typer.Typer.typed(Typer.scala:2987)
+	dotty.tools.dotc.typer.Typer.typed(Typer.scala:2991)
+	dotty.tools.dotc.typer.Typer.typedFunctionValue(Typer.scala:1464)
+	dotty.tools.dotc.typer.Typer.typedFunction(Typer.scala:1238)
+	dotty.tools.dotc.typer.Typer.typedUnnamed$1(Typer.scala:2869)
+	dotty.tools.dotc.typer.Typer.typedUnadapted(Typer.scala:2922)
+	dotty.tools.dotc.typer.Typer.typed(Typer.scala:2987)
+	dotty.tools.dotc.typer.Typer.typed(Typer.scala:2991)
+	dotty.tools.dotc.typer.Typer.typedExpr(Typer.scala:3107)
+	dotty.tools.dotc.typer.Typer.typedValDef(Typer.scala:2231)
+	dotty.tools.dotc.typer.Typer.typedNamed$1(Typer.scala:2832)
+	dotty.tools.dotc.typer.Typer.typedUnadapted(Typer.scala:2921)
+	dotty.tools.dotc.typer.Typer.typed(Typer.scala:2987)
+	dotty.tools.dotc.typer.Typer.typed(Typer.scala:2991)
+	dotty.tools.dotc.typer.Typer.traverse$1(Typer.scala:3013)
+	dotty.tools.dotc.typer.Typer.typedStats(Typer.scala:3063)
+	dotty.tools.dotc.typer.Typer.typedClassDef(Typer.scala:2500)
+	dotty.tools.dotc.typer.Typer.typedTypeOrClassDef$1(Typer.scala:2847)
+	dotty.tools.dotc.typer.Typer.typedNamed$1(Typer.scala:2851)
+	dotty.tools.dotc.typer.Typer.typedUnadapted(Typer.scala:2921)
+	dotty.tools.dotc.typer.Typer.typed(Typer.scala:2987)
+	dotty.tools.dotc.typer.Typer.typed(Typer.scala:2991)
+	dotty.tools.dotc.typer.Typer.traverse$1(Typer.scala:3013)
+	dotty.tools.dotc.typer.Typer.typedStats(Typer.scala:3063)
+	dotty.tools.dotc.typer.Typer.typedPackageDef(Typer.scala:2629)
+	dotty.tools.dotc.typer.Typer.typedUnnamed$1(Typer.scala:2892)
+	dotty.tools.dotc.typer.Typer.typedUnadapted(Typer.scala:2922)
+	dotty.tools.dotc.typer.Typer.typed(Typer.scala:2987)
+	dotty.tools.dotc.typer.Typer.typed(Typer.scala:2991)
+	dotty.tools.dotc.typer.Typer.traverse$1(Typer.scala:3040)
+	dotty.tools.dotc.typer.Typer.typedStats(Typer.scala:3063)
+	dotty.tools.dotc.typer.Typer.typedPackageDef(Typer.scala:2629)
+	dotty.tools.dotc.typer.Typer.typedUnnamed$1(Typer.scala:2892)
+	dotty.tools.dotc.typer.Typer.typedUnadapted(Typer.scala:2922)
+	dotty.tools.dotc.typer.Typer.typed(Typer.scala:2987)
+	dotty.tools.dotc.typer.Typer.typed(Typer.scala:2991)
+	dotty.tools.dotc.typer.Typer.typedExpr(Typer.scala:3107)
+	dotty.tools.dotc.typer.TyperPhase.typeCheck$$anonfun$1(TyperPhase.scala:43)
+	dotty.tools.dotc.typer.TyperPhase.typeCheck$$anonfun$adapted$1(TyperPhase.scala:50)
+	scala.Function0.apply$mcV$sp(Function0.scala:39)
+	dotty.tools.dotc.core.Phases$Phase.monitor(Phases.scala:417)
+	dotty.tools.dotc.typer.TyperPhase.typeCheck(TyperPhase.scala:50)
+	dotty.tools.dotc.typer.TyperPhase.runOn$$anonfun$3(TyperPhase.scala:84)
+	scala.runtime.function.JProcedure1.apply(JProcedure1.java:15)
+	scala.runtime.function.JProcedure1.apply(JProcedure1.java:10)
+	scala.collection.immutable.List.foreach(List.scala:333)
+	dotty.tools.dotc.typer.TyperPhase.runOn(TyperPhase.scala:84)
+	dotty.tools.dotc.Run.runPhases$1$$anonfun$1(Run.scala:234)
+	scala.runtime.function.JProcedure1.apply(JProcedure1.java:15)
+	scala.runtime.function.JProcedure1.apply(JProcedure1.java:10)
+	scala.collection.ArrayOps$.foreach$extension(ArrayOps.scala:1328)
+	dotty.tools.dotc.Run.runPhases$1(Run.scala:245)
+	dotty.tools.dotc.Run.compileUnits$$anonfun$1(Run.scala:253)
+	dotty.tools.dotc.Run.compileUnits$$anonfun$adapted$1(Run.scala:262)
+	dotty.tools.dotc.util.Stats$.maybeMonitored(Stats.scala:68)
+	dotty.tools.dotc.Run.compileUnits(Run.scala:262)
+	dotty.tools.dotc.Run.compileSources(Run.scala:186)
+	dotty.tools.dotc.interactive.InteractiveDriver.run(InteractiveDriver.scala:165)
+	scala.meta.internal.pc.MetalsDriver.run(MetalsDriver.scala:45)
+	scala.meta.internal.pc.HoverProvider$.hover(HoverProvider.scala:34)
+	scala.meta.internal.pc.ScalaPresentationCompiler.hover$$anonfun$1(ScalaPresentationCompiler.scala:325)
